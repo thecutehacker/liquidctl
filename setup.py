@@ -9,7 +9,8 @@ from setuptools.command.develop import develop
 def get_static_version():
     """Read manually attributed version number.
 
-    Note: the version number only changes when releases are made."""
+    Note: the version number only changes when releases are made.
+    """
     with open('liquidctl/version.py', 'r') as fv:
         vals = {}
         exec(fv.read(), vals)
@@ -70,7 +71,12 @@ CHANGES_URL = '{}/blob/v{}/CHANGELOG.md'.format(HOME, VERSION)
 
 make_extraversion()
 
-install_requires = ['docopt', 'pyusb', 'hidapi', 'colorlog']
+install_requires = [
+    'colorlog',
+    'docopt',
+    'hidapi',
+    'pyusb',
+]
 
 if sys.platform == 'linux':
     install_requires.append('smbus')
@@ -97,8 +103,10 @@ setuptools.setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    keywords='cross-platform cli driver corsair evga nzxt liquid-cooler fan-controller '
-             'power-supply led-controller kraken smart-device hue2 gigabyte',
+    keywords=(
+        'cross-platform cli driver corsair evga nzxt liquid-cooler fan-controller '
+        'power-supply led-controller kraken smart-device hue2 gigabyte'
+    ),
     project_urls={
         'Supported devices': SUPPORTED_URL,
         'Documentation': DOC_URL,

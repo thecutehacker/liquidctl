@@ -81,12 +81,13 @@ for svid, did, sdid, descriptions in nvidia_devs:
     for desc in descriptions:
         desc = desc.replace(' (experimental)', '')
         print(f'# {desc}')
-    print(cleandoc(f'''
+    rule = f'''
         KERNEL=="i2c-*", ATTR{{name}}=="NVIDIA i2c adapter 1 *", ATTRS{{vendor}}=="0x10de", \\
             ATTRS{{device}}=="{did:#06x}", ATTRS{{subsystem_vendor}}=="{svid:#06x}", \\
             ATTRS{{subsystem_device}}=="{sdid:#06x}", DRIVERS=="nvidia", TAG+="uaccess", \\
             RUN{{builtin}}="kmod load i2c-dev"
-    '''))
+    '''
+    print(cleandoc(rule))
 
 print()
 print()

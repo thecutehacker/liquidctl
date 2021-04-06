@@ -44,6 +44,7 @@ _COLOR_CHANNELS = {
     'ring':     0x2,
 }
 
+# fmt: off
 _COLOR_MODES = {
     # (byte3/mode, byte2/reverse, byte4/modifier, min colors, max colors, only ring)
     'off':                           (0x00, 0x00, 0x00, 0, 0, False),
@@ -67,6 +68,7 @@ _COLOR_MODES = {
     'wings':                         (0x0c, 0x00, 0x00, 1, 1, True),
     'super-wave':                    (0x0d, 0x00, 0x00, 1, 8, True),  # independent ring leds
 }
+# fmt: on
 
 _ANIMATION_SPEEDS = {
     'slowest':  0x0,
@@ -89,10 +91,10 @@ class Kraken2(UsbHidDriver):
     DEVICE_KRAKENM = 'Kraken M'
     SUPPORTED_DEVICES = [
         (0x1e71, 0x170e, None, 'NZXT Kraken X (X42, X52, X62 or X72)', {
-            'device_type': DEVICE_KRAKENX
+            'device_type': DEVICE_KRAKENX,
         }),
         (0x1e71, 0x1715, None, 'NZXT Kraken M22', {
-            'device_type': DEVICE_KRAKENM
+            'device_type': DEVICE_KRAKENM,
         }),
     ]
 

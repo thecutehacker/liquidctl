@@ -204,6 +204,7 @@ class SmartDevice(_CommonSmartDeviceDriver):
     _READ_LENGTH = 21
     _WRITE_LENGTH = 65
 
+    # fmt: off
     _COLOR_MODES = {
         # (byte2/mode, byte3/variant, byte4/size, min colors, max colors)
         'off':                           (0x00, 0x00, 0x00, 0, 0),
@@ -235,6 +236,7 @@ class SmartDevice(_CommonSmartDeviceDriver):
         'backwards-moving-alternating':  (0x05, 0x08, 0x00, 2, 2),
         'backwards-super-wave':          (0x0d, 0x00, 0x00, 1, 40),
     }
+    # fmt: on
 
     def __init__(self, device, description, speed_channel_count, color_channel_count, **kwargs):
         """Instantiate a driver with a device handle."""
@@ -339,6 +341,7 @@ class SmartDevice2(_CommonSmartDeviceDriver):
     _READ_LENGTH = 64
     _WRITE_LENGTH = 64
 
+    # fmt: off
     _COLOR_MODES = {
         # (mode, size/variant, moving, min colors, max colors)
         'off':                              (0x00, 0x00, 0x00, 0, 0),
@@ -384,6 +387,7 @@ class SmartDevice2(_CommonSmartDeviceDriver):
         'backwards-super-rainbow':          (0x0c, 0x00, 0x00, 0, 0),
         'backwards-rainbow-pulse':          (0x0d, 0x00, 0x00, 0, 0),
     }
+    # fmt: on
 
     def __init__(self, device, description, speed_channel_count, color_channel_count, **kwargs):
         """Instantiate a driver with a device handle."""

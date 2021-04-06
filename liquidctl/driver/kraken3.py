@@ -45,7 +45,7 @@ _COLOR_CHANNELS_KRAKENX = {
     'external': 0b001,
     'ring': 0b010,
     'logo': 0b100,
-    'sync': 0b111
+    'sync': 0b111,
 }
 
 # Available color channels and IDs for model Z coolers
@@ -59,6 +59,7 @@ _COLOR_CHANNELS_KRAKENZ = {
 # FIXME are all modes really supported by all channels? (this is better because
 #       of synchronization, but it's not how the previous generation worked, so
 #       I would like to double check)
+# fmt: off
 _COLOR_MODES = {
     'off':                                  (0x00, 0x00,  0, 0, 0),
     'fixed':                                (0x00, 0x00,  0, 1, 1),
@@ -106,6 +107,7 @@ _COLOR_MODES = {
     'backwards-super-rainbow':              (0x0c, 0x00,  2, 0, 0),
     'backwards-rainbow-pulse':              (0x0d, 0x00,  2, 0, 0),
 }
+# fmt: on
 
 # A static value per channel that is somehow related to animation time and
 # synchronization, although the specific mechanism is not yet understood.
@@ -119,6 +121,7 @@ _STATIC_VALUE = {
 
 # Speed scale/timing bytes
 # scale -> (slowest, slower, normal, faster, fastest)
+# fmt: off
 _SPEED_VALUE = {
     0:  ([0x32, 0x00], [0x32, 0x00], [0x32, 0x00], [0x32, 0x00], [0x32, 0x00]),
     1:  ([0x50, 0x00], [0x3c, 0x00], [0x28, 0x00], [0x14, 0x00], [0x0a, 0x00]),
@@ -133,6 +136,7 @@ _SPEED_VALUE = {
     10: ([0x37, 0x00], [0x28, 0x00], [0x19, 0x00], [0x0a, 0x00], [0x00, 0x00]),
     11: ([0x6e, 0x00], [0x53, 0x00], [0x39, 0x00], [0x2e, 0x00], [0x20, 0x00]),
 }
+# fmt: on
 
 _ANIMATION_SPEEDS = {
     'slowest': 0x0,
