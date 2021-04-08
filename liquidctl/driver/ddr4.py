@@ -25,12 +25,13 @@ class Ddr4Spd:
 
     class DramDeviceType(Enum):
         """DRAM device type (not exhaustive)."""
-        DDR4_SDRAM = 0x0c
+
+        DDR4_SDRAM = 0x0C
         LPDDR4_SDRAM = 0x10
         LPDDR4X_SDRAM = 0x11
 
         def __str__(self):
-            return self.name.replace('_', ' ')
+            return self.name.replace("_", " ")
 
     class BaseModuleType(Enum):
         """Base module type (not exhaustive)."""
@@ -41,52 +42,54 @@ class Ddr4Spd:
         LRDIMM = 0x0100
 
         def __str__(self):
-            return self.name.replace('_', ' ')
+            return self.name.replace("_", " ")
 
     # Standard Manufacturer's Identification Code from JEDEC JEP106;
     # (not exhaustive) maps banks and IDs to names: _JEP106[<bank>][id]
     _JEP106 = {
         1: {
-            0x2c: 'Micron',
-            0xad: 'SK Hynix',
-            0xce: 'Samsung',
+            0x2C: "Micron",
+            0xAD: "SK Hynix",
+            0xCE: "Samsung",
         },
-        2: {0x98: 'Kingston'},
-        3: {0x9e: 'Corsair'},
+        2: {0x98: "Kingston"},
+        3: {0x9E: "Corsair"},
         5: {
-            0xcd: 'G.SKILL',
-            0xef: 'Team Group',
+            0xCD: "G.SKILL",
+            0xEF: "Team Group",
         },
         6: {
-            0x02: 'Patriot',
-            0x9b: 'Crucial',
+            0x02: "Patriot",
+            0x9B: "Crucial",
         },
     }
 
     def __init__(self, eeprom):
         self._eeprom = eeprom
 
-        if self.dram_device_type not in [self.DramDeviceType.DDR4_SDRAM,
-                                         self.DramDeviceType.LPDDR4_SDRAM,
-                                         self.DramDeviceType.LPDDR4X_SDRAM]:
-            raise ValueError('not a DDR4 SPD EEPROM')
+        if self.dram_device_type not in [
+            self.DramDeviceType.DDR4_SDRAM,
+            self.DramDeviceType.LPDDR4_SDRAM,
+            self.DramDeviceType.LPDDR4X_SDRAM,
+        ]:
+            raise ValueError("not a DDR4 SPD EEPROM")
 
     @property
     def spd_bytes_used(self):
-        nibble = self._eeprom[0x00] & 0x0f
-        assert nibble <= 0b0100, 'reserved'
+        nibble = self._eeprom[0x00] & 0x0F
+        assert nibble <= 0b0100, "reserved"
         return nibble * 128
 
     @property
     def spd_bytes_total(self):
         nibble = (self._eeprom[0x00] >> 4) & 0b111
-        assert nibble <= 0b010, 'reserved'
+        assert nibble <= 0b010, "reserved"
         return nibble * 256
 
     @property
     def spd_revision(self):
         enc_level = self._eeprom[0x01] >> 4
-        add_level = self._eeprom[0x01] & 0x0f
+        add_level = self._eeprom[0x01] & 0x0F
         return (enc_level, add_level)
 
     @property
@@ -95,30 +98,30 @@ class Ddr4Spd:
 
     @property
     def module_type(self):
-        base = self._eeprom[0x03] & 0x0f
+        base = self._eeprom[0x03] & 0x0F
         hybrid = self._eeprom[0x03] >> 4
         assert not hybrid
         return (self.BaseModuleType(base), None)
 
     @property
     def module_thermal_sensor(self):
-        present = self._eeprom[0x0e] >> 7
+        present = self._eeprom[0x0E] >> 7
         return bool(present)
 
     @property
     def module_manufacturer(self):
-        bank = 1 + self._eeprom[0x140] & 0x7f
+        bank = 1 + self._eeprom[0x140] & 0x7F
         mid = self._eeprom[0x141]
         return self._JEP106[bank][mid]
 
     @property
     def module_part_number(self):
-        return self._eeprom[0x149:0x15d].decode(encoding='ascii').rstrip()
+        return self._eeprom[0x149:0x15D].decode(encoding="ascii").rstrip()
 
     @property
     def dram_manufacturer(self):
-        bank = 1 + self._eeprom[0x15e] & 0x7f
-        mid = self._eeprom[0x15f]
+        bank = 1 + self._eeprom[0x15E] & 0x7F
+        mid = self._eeprom[0x15F]
         return self._JEP106[bank][mid]
 
 
@@ -131,27 +134,37 @@ class Ddr4Temperature(SmbusDriver):
     _REG_CAPABILITIES = 0x00
     _REG_TEMPERATURE = 0x05
 
-    _UNSAFE = ['smbus', 'ddr4_temperature']
+    _UNSAFE = ["smbus", "ddr4_temperature"]
 
     @classmethod
-    def probe(cls, smbus, vendor=None, product=None, address=None, match=None,
-              release=None, serial=None, **kwargs):
+    def probe(
+        cls,
+        smbus,
+        vendor=None,
+        product=None,
+        address=None,
+        match=None,
+        release=None,
+        serial=None,
+        **kwargs,
+    ):
 
         # FIXME support mainstream AMD chipsets on Linux; note that unlike
         # i801_smbus, piix4_smbus does not enumerate and register the available
         # SPD EEPROMs with i2c_register_spd
 
-        _SMBUS_DRIVERS = ['i801_smbus']
+        _SMBUS_DRIVERS = ["i801_smbus"]
 
-        if smbus.parent_driver not in _SMBUS_DRIVERS \
-                or any([vendor, product, release, serial]):  # wont match, always None
+        if smbus.parent_driver not in _SMBUS_DRIVERS or any(
+            [vendor, product, release, serial]
+        ):  # wont match, always None
             return
 
         for dimm in range(cls._SA_MASK + 1):
             spd_addr = cls._SPD_DTIC | dimm
             eeprom = smbus.load_eeprom(spd_addr)
 
-            if not eeprom or eeprom.name != 'ee1004':
+            if not eeprom or eeprom.name != "ee1004":
                 continue
 
             try:
@@ -167,17 +180,18 @@ class Ddr4Temperature(SmbusDriver):
             if not desc:
                 continue
 
-            desc += f' DIMM{dimm + 1} (experimental)'
+            desc += f" DIMM{dimm + 1} (experimental)"
 
-            if (address and int(address, base=16) != spd_addr) \
-                    or (match and match.lower() not in desc.lower()):
+            if (address and int(address, base=16) != spd_addr) or (
+                match and match.lower() not in desc.lower()
+            ):
                 continue
 
             # set the default device address to a weird value to prevent
             # accidental attempts of writes to the SPD EEPROM (DDR4 SPD writes
             # are also disabled by default in many motherboards)
             dev = cls(smbus, desc, address=(None, None, spd_addr))
-            _LOGGER.debug('instanced driver for %s', desc)
+            _LOGGER.debug("instanced driver for %s", desc)
             yield dev
 
     @classmethod
@@ -188,10 +202,10 @@ class Ddr4Temperature(SmbusDriver):
         try:
             manufacturer = spd.module_manufacturer
         except:
-            return 'DDR4'
+            return "DDR4"
 
         if spd.module_part_number:
-            return f'{manufacturer} {spd.module_part_number}'
+            return f"{manufacturer} {spd.module_part_number}"
         else:
             return manufacturer
 
@@ -201,7 +215,7 @@ class Ddr4Temperature(SmbusDriver):
 
     @property
     def address(self):
-        return f'{self._address[2]:#04x}'
+        return f"{self._address[2]:#04x}"
 
     def get_status(self, **kwargs):
         """Get a status report.
@@ -210,24 +224,27 @@ class Ddr4Temperature(SmbusDriver):
         """
 
         if not check_unsafe(*self._UNSAFE, **kwargs):
-            _LOGGER.warning("%s: nothing returned, requires unsafe features '%s'",
-                            self.description, ','.join(self._UNSAFE))
+            _LOGGER.warning(
+                "%s: nothing returned, requires unsafe features '%s'",
+                self.description,
+                ",".join(self._UNSAFE),
+            )
             return []
 
         treg = self._read_temperature_register()
 
         # discard flags bits and interpret remaining bits as 2s complement
-        treg = treg & 0x1fff
-        if treg > 0x0fff:
+        treg = treg & 0x1FFF
+        if treg > 0x0FFF:
             treg -= 0x2000
 
         # should always be supported
-        resolution, bits = (.25, 10)
+        resolution, bits = (0.25, 10)
 
         multiplier = treg >> (12 - bits)
 
         return [
-            ('Temperature', resolution * multiplier, '°C'),
+            ("Temperature", resolution * multiplier, "°C"),
         ]
 
     def _read_temperature_register(self):
@@ -254,14 +271,14 @@ class VengeanceRgb(Ddr4Temperature):
     """Corsair Vengeance RGB DDR4 module."""
 
     _RGB_DTIC = 0x58
-    _REG_RGB_TIMING1 = 0xa4
-    _REG_RGB_TIMING2 = 0xa5
-    _REG_RGB_MODE = 0xa6
-    _REG_RGB_COLOR_COUNT = 0xa7
-    _REG_RGB_COLOR_START = 0xb0
-    _REG_RGB_COLOR_END = 0xc5
+    _REG_RGB_TIMING1 = 0xA4
+    _REG_RGB_TIMING2 = 0xA5
+    _REG_RGB_MODE = 0xA6
+    _REG_RGB_COLOR_COUNT = 0xA7
+    _REG_RGB_COLOR_START = 0xB0
+    _REG_RGB_COLOR_END = 0xC5
 
-    _UNSAFE = ['smbus', 'vengeance_rgb']
+    _UNSAFE = ["smbus", "vengeance_rgb"]
 
     @unique
     class Mode(bytes, RelaxedNamesEnum):
@@ -276,7 +293,7 @@ class VengeanceRgb(Ddr4Temperature):
         FADING = (0x01, 2, 7)
         BREATHING = (0x02, 1, 7)
 
-        OFF = (0xf0, 0, 0)  # pseudo mode, equivalent to fixed #000000
+        OFF = (0xF0, 0, 0)  # pseudo mode, equivalent to fixed #000000
 
         def __str__(self):
             return self.name.lower()
@@ -295,12 +312,14 @@ class VengeanceRgb(Ddr4Temperature):
 
     @classmethod
     def _match(cls, spd):
-        if spd.module_type != (Ddr4Spd.BaseModuleType.UDIMM, None) \
-                or spd.module_manufacturer != 'Corsair' \
-                or not spd.module_part_number.startswith('CMR'):
+        if (
+            spd.module_type != (Ddr4Spd.BaseModuleType.UDIMM, None)
+            or spd.module_manufacturer != "Corsair"
+            or not spd.module_part_number.startswith("CMR")
+        ):
             return None
 
-        return 'Corsair Vengeance RGB'
+        return "Corsair Vengeance RGB"
 
     def _read_temperature_register(self):
         # instead of using block reads, Vengeance RGB temperature sensor
@@ -309,10 +328,18 @@ class VengeanceRgb(Ddr4Temperature):
 
         # swap LSB and MSB before returning: read_word_data reads in little
         # endianess, but the register should be read in big endianess
-        return ((treg & 0xff) << 8) | (treg >> 8)
+        return ((treg & 0xFF) << 8) | (treg >> 8)
 
-    def set_color(self, channel, mode, colors, speed='normal',
-                  transition_ticks=None, stable_ticks=None, **kwargs):
+    def set_color(
+        self,
+        channel,
+        mode,
+        colors,
+        speed="normal",
+        transition_ticks=None,
+        stable_ticks=None,
+        **kwargs,
+    ):
         """Set the RGB lighting mode and, when applicable, color.
 
         The table bellow summarizes the available channels, modes and their
@@ -340,7 +367,7 @@ class VengeanceRgb(Ddr4Temperature):
             common = self.SpeedTimings[speed].value
             tp1 = tp2 = common
         except KeyError:
-            raise ValueError(f'invalid speed preset: {speed!r}') from None
+            raise ValueError(f"invalid speed preset: {speed!r}") from None
 
         if transition_ticks is not None:
             tp1 = clamp(transition_ticks, 0, 63)
@@ -352,14 +379,14 @@ class VengeanceRgb(Ddr4Temperature):
         try:
             mode = self.Mode[mode]
         except KeyError:
-            raise ValueError(f'invalid mode: {mode!r}') from None
+            raise ValueError(f"invalid mode: {mode!r}") from None
 
         if len(colors) < mode.min_colors:
-            raise ValueError(f'{mode} mode requires {mode.min_colors} colors')
+            raise ValueError(f"{mode} mode requires {mode.min_colors} colors")
 
         if len(colors) > mode.max_colors:
-            _LOGGER.debug('too many colors, dropping to %d', mode.max_colors)
-            colors = colors[:mode.max_colors]
+            _LOGGER.debug("too many colors, dropping to %d", mode.max_colors)
+            colors = colors[: mode.max_colors]
 
         self._compute_rgb_address()
 
@@ -397,7 +424,7 @@ class VengeanceRgb(Ddr4Temperature):
         candidate = self._RGB_DTIC | (self._address[2] & self._SA_MASK)
 
         # reading from any register should return 0xba if we have the right device
-        if self._smbus.read_byte_data(candidate, self._REG_RGB_MODE) != 0xba:
-            raise ExpectationNotMet(f'{self.bus}:{candidate:#04x} is not the RGB controller')
+        if self._smbus.read_byte_data(candidate, self._REG_RGB_MODE) != 0xBA:
+            raise ExpectationNotMet(f"{self.bus}:{candidate:#04x} is not the RGB controller")
 
         self._rgb_address = candidate

@@ -18,7 +18,7 @@ from liquidctl.util import check_unsafe, LazyHexRepr
 _LOGGER = logging.getLogger(__name__)
 
 
-if sys.platform == 'linux':
+if sys.platform == "linux":
 
     # WARNING: the tests rely on being able to override which SMBus
     # implementation is used here; this is done through the SMBus attribute
@@ -26,12 +26,12 @@ if sys.platform == 'linux':
     # initialization
     from smbus import SMBus
 
-    LinuxEeprom = namedtuple('LinuxEeprom', 'name data')
+    LinuxEeprom = namedtuple("LinuxEeprom", "name data")
 
     class LinuxI2c(BaseBus):
         """The Linux I²C (`/sys/bus/i2c`) bus."""
 
-        def __init__(self, i2c_root='/sys/bus/i2c'):
+        def __init__(self, i2c_root="/sys/bus/i2c"):
             self._i2c_root = Path(i2c_root)
 
         def find_devices(self, bus=None, usb_port=None, **kwargs):
@@ -41,29 +41,32 @@ if sys.platform == 'linux':
                 # a usb_port filter implies an USB bus
                 return
 
-            devices = self._i2c_root.joinpath('devices')
+            devices = self._i2c_root.joinpath("devices")
             if not devices.exists():
-                _LOGGER.debug('skipping %s, %s not available',
-                              self.__class__.__name__, devices)
+                _LOGGER.debug("skipping %s, %s not available", self.__class__.__name__, devices)
                 return
 
-            drivers = sorted(find_all_subclasses(SmbusDriver),
-                             key=lambda x: (x.__module__, x.__name__))
+            drivers = sorted(
+                find_all_subclasses(SmbusDriver), key=lambda x: (x.__module__, x.__name__)
+            )
 
-            _LOGGER.debug('searching %s (%s)', self.__class__.__name__,
-                          ', '.join(map(lambda x: x.__name__, drivers)))
+            _LOGGER.debug(
+                "searching %s (%s)",
+                self.__class__.__name__,
+                ", ".join(map(lambda x: x.__name__, drivers)),
+            )
 
             for i2c_dev in devices.iterdir():
                 try:
                     i2c_bus = LinuxI2cBus(i2c_dev)
                 except ValueError as err:
-                    _LOGGER.debug('ignoring %s, %s', i2c_dev.name, err)
+                    _LOGGER.debug("ignoring %s, %s", i2c_dev.name, err)
                     continue
 
                 if bus and bus != i2c_bus.name:
                     continue
 
-                _LOGGER.debug('found I²C bus %s', i2c_bus.name)
+                _LOGGER.debug("found I²C bus %s", i2c_bus.name)
                 yield from i2c_bus.find_devices(drivers, **kwargs)
 
     class LinuxI2cBus:
@@ -84,10 +87,10 @@ if sys.platform == 'linux':
             self._smbus = None
 
             try:
-                assert i2c_dev.name.startswith('i2c-')
+                assert i2c_dev.name.startswith("i2c-")
                 self._number = int(i2c_dev.name[4:])
             except:
-                raise ValueError('cannot infer bus number')
+                raise ValueError("cannot infer bus number")
 
         def find_devices(self, drivers, **kwargs):
             """Probe drivers and find compatible devices in this bus."""
@@ -100,58 +103,56 @@ if sys.platform == 'linux':
                 try:
                     self._smbus = SMBus(self._number)
                 except FileNotFoundError:
-                    if Path('/sys/class/i2c-dev').exists():
+                    if Path("/sys/class/i2c-dev").exists():
                         raise
-                    raise OSError('kernel module i2c-dev not loaded') from None
+                    raise OSError("kernel module i2c-dev not loaded") from None
 
         def read_byte(self, address):
             """Read a single byte from a device."""
             value = self._smbus.read_byte(address)
-            _LOGGER.debug('read byte @ 0x%02x:0x%02x', address, value)
+            _LOGGER.debug("read byte @ 0x%02x:0x%02x", address, value)
             return value
 
         def read_byte_data(self, address, register):
             """Read a single byte from a designated register."""
             value = self._smbus.read_byte_data(address, register)
-            _LOGGER.debug('read byte data @ 0x%02x:0x%02x 0x%02x',
-                          address, register, value)
+            _LOGGER.debug("read byte data @ 0x%02x:0x%02x 0x%02x", address, register, value)
             return value
 
         def read_word_data(self, address, register):
             """Read a single 2-byte word from a given register."""
             value = self._smbus.read_word_data(address, register)
-            _LOGGER.debug('read word data @ 0x%02x:0x%02x 0x%02x',
-                          address, register, value)
+            _LOGGER.debug("read word data @ 0x%02x:0x%02x 0x%02x", address, register, value)
             return value
 
         def read_block_data(self, address, register):
             """Read a block of up to  32 bytes from a given register."""
             data = self._smbus.read_block_data(address, register)
-            _LOGGER.debug('read block data @ 0x%02x:0x%02x: %r',
-                          address, register, LazyHexRepr(data))
+            _LOGGER.debug(
+                "read block data @ 0x%02x:0x%02x: %r", address, register, LazyHexRepr(data)
+            )
             return data
 
         def write_byte(self, address, value):
             """Write a single byte to a device."""
-            _LOGGER.debug('writing byte @ 0x%02x: 0x%02x', address, value)
+            _LOGGER.debug("writing byte @ 0x%02x: 0x%02x", address, value)
             return self._smbus.write_byte(address, value)
 
         def write_byte_data(self, address, register, value):
             """Write a single byte to a designated register."""
-            _LOGGER.debug('writing byte data @ 0x%02x:0x%02x 0x%02x',
-                          address, register, value)
+            _LOGGER.debug("writing byte data @ 0x%02x:0x%02x 0x%02x", address, register, value)
             return self._smbus.write_byte_data(address, register, value)
 
         def write_word_data(self, address, register, value):
             """Write a single 2-byte word to a designated register."""
-            _LOGGER.debug('writing word data @ 0x%02x:0x%02x 0x%02x',
-                          address, register, value)
+            _LOGGER.debug("writing word data @ 0x%02x:0x%02x 0x%02x", address, register, value)
             return self._smbus.write_word_data(address, register, value)
 
         def write_block_data(self, address, register, data):
             """Write a block of byte data to a given register."""
-            _LOGGER.debug('writing block data @ 0x%02x:0x%02x %r',
-                          address, register, LazyHexRepr(data))
+            _LOGGER.debug(
+                "writing block data @ 0x%02x:0x%02x %r", address, register, LazyHexRepr(data)
+            )
             return self._smbus.write_block_data(address, register, data)
 
         def close(self):
@@ -166,10 +167,10 @@ if sys.platform == 'linux':
             # uses kernel facilities to avoid directly reading from the EEPROM
             # or managing its pages, also avoiding the need for unsafe=smbus
 
-            dev = f'{self._number}-{address:04x}'
+            dev = f"{self._number}-{address:04x}"
             try:
-                name = self._i2c_dev.joinpath(dev, 'name').read_text().strip()
-                eeprom = self._i2c_dev.joinpath(dev, 'eeprom').read_bytes()
+                name = self._i2c_dev.joinpath(dev, "name").read_text().strip()
+                eeprom = self._i2c_dev.joinpath(dev, "eeprom").read_bytes()
                 return LinuxEeprom(name, eeprom)
             except Exception:
                 return None
@@ -180,48 +181,50 @@ if sys.platform == 'linux':
 
         @property
         def description(self):
-            return self._try_sysfs_read('name')
+            return self._try_sysfs_read("name")
 
         @property
         def parent_vendor(self):
-            return self._try_sysfs_read_hex('device/vendor')
+            return self._try_sysfs_read_hex("device/vendor")
 
         @property
         def parent_device(self):
-            return self._try_sysfs_read_hex('device/device')
+            return self._try_sysfs_read_hex("device/device")
 
         @property
         def parent_subsystem_vendor(self):
-            return self._try_sysfs_read_hex('device/subsystem_vendor')
+            return self._try_sysfs_read_hex("device/subsystem_vendor")
 
         @property
         def parent_subsystem_device(self):
-            return self._try_sysfs_read_hex('device/subsystem_device')
+            return self._try_sysfs_read_hex("device/subsystem_device")
 
         @property
         def parent_driver(self):
             try:
-                return Path(os.readlink(self._i2c_dev.joinpath('device/driver'))).name
+                return Path(os.readlink(self._i2c_dev.joinpath("device/driver"))).name
             except FileNotFoundError:
                 return None
 
         def __str__(self):
             if self.description:
-                return f'{self.name}: {self.description}'
+                return f"{self.name}: {self.description}"
             return self.name
 
         def __repr__(self):
             def hexid(maybe):
                 if maybe is not None:
-                    return f'{maybe:#06x}'
-                return 'None'
+                    return f"{maybe:#06x}"
+                return "None"
 
-            return f'{self.__class__.__name__}: name: {self.name!r}, description:' \
-                   f' {self.description!r}, parent_vendor: {hexid(self.parent_vendor)},' \
-                   f' parent_device: {hexid(self.parent_device)}, parent_subsystem_vendor:' \
-                   f' {hexid(self.parent_subsystem_vendor)},' \
-                   f' parent_subsystem_device: {hexid(self.parent_subsystem_device)},' \
-                   f' parent_driver: {self.parent_driver!r}'
+            return (
+                f"{self.__class__.__name__}: name: {self.name!r}, description:"
+                f" {self.description!r}, parent_vendor: {hexid(self.parent_vendor)},"
+                f" parent_device: {hexid(self.parent_device)}, parent_subsystem_vendor:"
+                f" {hexid(self.parent_subsystem_vendor)},"
+                f" parent_subsystem_device: {hexid(self.parent_subsystem_device)},"
+                f" parent_driver: {self.parent_driver!r}"
+            )
 
         def _try_sysfs_read(self, *sub, default=None):
             try:
@@ -246,18 +249,16 @@ class SmbusDriver(BaseDriver):
     @classmethod
     def find_supported_devices(cls, root_bus=None, **kwargs):
         """Find devices specifically compatible with this driver."""
-        if sys.platform != 'linux':
+        if sys.platform != "linux":
             return []
 
         if not root_bus:
             root_bus = LinuxI2c()
 
-        devs = filter(lambda x: isinstance(x, cls),
-                      root_bus.find_devices(**kwargs))
+        devs = filter(lambda x: isinstance(x, cls), root_bus.find_devices(**kwargs))
         return list(devs)
 
-    def __init__(self, smbus, description, vendor_id=None, product_id=None,
-                 address=None, **kwargs):
+    def __init__(self, smbus, description, vendor_id=None, product_id=None, address=None, **kwargs):
         # note: vendor_id and product_id are liquidctl properties intended to
         # allow the user to differentiate and ultimately filter devices; in the
         # context of SMBus, drivers may choose to use the parent's PCI
@@ -275,7 +276,7 @@ class SmbusDriver(BaseDriver):
 
     def connect(self, **kwargs):
         """Connect to the device."""
-        if check_unsafe('smbus', **kwargs):
+        if check_unsafe("smbus", **kwargs):
             self._smbus.open()
         else:
             # do not raise: some driver APIs may not access the bus after all,
@@ -327,7 +328,7 @@ class SmbusDriver(BaseDriver):
     @property
     def address(self):
         """Address of the device on the corresponding bus, or None if N/A."""
-        return f'{self._address:#04x}'
+        return f"{self._address:#04x}"
 
     @property
     def port(self):

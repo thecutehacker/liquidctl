@@ -33,7 +33,8 @@ from liquidctl.driver import kraken3
 from liquidctl.driver import nzxt_epsu
 from liquidctl.driver import rgb_fusion2
 from liquidctl.driver import smart_device
-if sys.platform == 'linux':
+
+if sys.platform == "linux":
     from liquidctl.driver import ddr4
     from liquidctl.driver import nvidia
 
@@ -51,8 +52,7 @@ def find_liquidctl_devices(pick=None, **kwargs):
     If `pick` is passed, only the driver instance for the `(pick + 1)`-th
     matched device will be yielded.
     """
-    buses = sorted(find_all_subclasses(BaseBus),
-                   key=lambda x: (x.__module__, x.__name__))
+    buses = sorted(find_all_subclasses(BaseBus), key=lambda x: (x.__module__, x.__name__))
     num = 0
     for bus_cls in buses:
         for dev in bus_cls().find_devices(**kwargs):
@@ -66,12 +66,12 @@ def find_liquidctl_devices(pick=None, **kwargs):
 
 
 __all__ = [
-    'find_liquidctl_devices',
+    "find_liquidctl_devices",
 ]
 
 # allow old driver imports to continue to work by manually placing these into
 # the module cache, so import liquidctl.driver.foo does not need to
 # check the filesystem for foo
-sys.modules['liquidctl.driver.kraken_two'] = kraken2
-sys.modules['liquidctl.driver.nzxt_smart_device'] = smart_device
-sys.modules['liquidctl.driver.seasonic'] = nzxt_epsu
+sys.modules["liquidctl.driver.kraken_two"] = kraken2
+sys.modules["liquidctl.driver.nzxt_smart_device"] = smart_device
+sys.modules["liquidctl.driver.seasonic"] = nzxt_epsu

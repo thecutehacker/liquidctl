@@ -57,23 +57,23 @@ class CommandCode(IntEnum):
 
     VOUT_MODE = 0x20
 
-    FAN_CONFIG_1_2 = 0x3a
-    FAN_COMMAND_1 = 0x3b
-    FAN_COMMAND_2 = 0x3c
-    FAN_CONFIG_3_4 = 0x3d
-    FAN_COMMAND_3 = 0x3e
-    FAN_COMMAND_4 = 0x3f
+    FAN_CONFIG_1_2 = 0x3A
+    FAN_COMMAND_1 = 0x3B
+    FAN_COMMAND_2 = 0x3C
+    FAN_CONFIG_3_4 = 0x3D
+    FAN_COMMAND_3 = 0x3E
+    FAN_COMMAND_4 = 0x3F
 
     READ_EIN = 0x86
     READ_EOUT = 0x87
     READ_VIN = 0x88
     READ_IIN = 0x89
-    READ_VCAP = 0x8a
-    READ_VOUT = 0x8b
-    READ_IOUT = 0x8c
-    READ_TEMPERATURE_1 = 0x8d
-    READ_TEMPERATURE_2 = 0x8e
-    READ_TEMPERATURE_3 = 0x8f
+    READ_VCAP = 0x8A
+    READ_VOUT = 0x8B
+    READ_IOUT = 0x8C
+    READ_TEMPERATURE_1 = 0x8D
+    READ_TEMPERATURE_2 = 0x8E
+    READ_TEMPERATURE_3 = 0x8F
     READ_FAN_SPEED_1 = 0x90
     READ_FAN_SPEED_2 = 0x91
     READ_FAN_SPEED_3 = 0x92
@@ -84,19 +84,19 @@ class CommandCode(IntEnum):
     READ_PIN = 0x97
     READ_PMBUS_REVISON = 0x98
     MFR_ID = 0x99
-    MFR_MODEL = 0x9a
-    MFR_REVISION = 0x9b
-    MFR_LOCATION = 0x9c
-    MFR_DATE = 0x9d
-    MFR_SERIAL = 0x9e
+    MFR_MODEL = 0x9A
+    MFR_REVISION = 0x9B
+    MFR_LOCATION = 0x9C
+    MFR_DATE = 0x9D
+    MFR_SERIAL = 0x9E
 
-    MFR_SPECIFIC_D1 = 0xd1
-    MFR_SPECIFIC_D2 = 0xd2
-    MFR_SPECIFIC_D8 = 0xd8
-    MFR_SPECIFIC_DC = 0xdc
-    MFR_SPECIFIC_EE = 0xee
-    MFR_SPECIFIC_F0 = 0xf0
-    MFR_SPECIFIC_FC = 0xfc
+    MFR_SPECIFIC_D1 = 0xD1
+    MFR_SPECIFIC_D2 = 0xD2
+    MFR_SPECIFIC_D8 = 0xD8
+    MFR_SPECIFIC_DC = 0xDC
+    MFR_SPECIFIC_EE = 0xEE
+    MFR_SPECIFIC_F0 = 0xF0
+    MFR_SPECIFIC_FC = 0xFC
 
 
 def linear_to_float(bytes, vout_exp=None):
@@ -119,18 +119,18 @@ def linear_to_float(bytes, vout_exp=None):
     >>> linear_to_float(bytes.fromhex('6703'), vout_exp=0x1c)
     54.4375
     """
-    tmp = int.from_bytes(bytes[:2], byteorder='little')
+    tmp = int.from_bytes(bytes[:2], byteorder="little")
     if vout_exp is None:
         exp = tmp >> 11
-        fra = tmp & 0x7ff
+        fra = tmp & 0x7FF
         if fra > 1023:
             fra = fra - 2048
     else:
-        exp = vout_exp & 0x1f
+        exp = vout_exp & 0x1F
         fra = tmp
     if exp > 15:
         exp = exp - 32
-    return fra * 2**exp
+    return fra * 2 ** exp
 
 
 def float_to_linear11(float):
@@ -152,15 +152,15 @@ def float_to_linear11(float):
     -2812
     """
     if float == 0:
-        return b'\x00\x00'
+        return b"\x00\x00"
     max_y = 1023
-    n = math.ceil(math.log(math.fabs(float)/max_y, 2))
-    y = round(float * 2**(-n))
+    n = math.ceil(math.log(math.fabs(float) / max_y, 2))
+    y = round(float * 2 ** (-n))
     if n < 0:
         n = n + 32
     if y < 0:
         y = y + 2048
-    return int.to_bytes((n << 11) | y, length=2, byteorder='little')
+    return int.to_bytes((n << 11) | y, length=2, byteorder="little")
 
 
 def compute_pec(bytes):
@@ -204,7 +204,7 @@ def _gen_pec_table():
             if reg & _PEC_MSB_MASK != 0:
                 reg = (reg << 1) ^ _PEC_POLY
             else:
-                reg = (reg << 1)
+                reg = reg << 1
         tbl[i] = reg & _PEC_MASK
     _PEC_TBL = tbl
     return tbl
@@ -213,6 +213,6 @@ def _gen_pec_table():
 _PEC_WIDTH = 8
 _PEC_MSB_MASK = 1 << (_PEC_WIDTH - 1)
 _PEC_MASK = (_PEC_MSB_MASK << 1) - 1
-_PEC_POLY = (0b100000111 & _PEC_MASK)
+_PEC_POLY = 0b100000111 & _PEC_MASK
 _PEC_TBL_LEN = 256
 _PEC_TBL = None

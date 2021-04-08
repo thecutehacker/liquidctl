@@ -26,22 +26,21 @@ import logging
 
 from liquidctl.driver.usb import UsbHidDriver
 from liquidctl.error import NotSupportedByDevice
-from liquidctl.util import clamp, normalize_profile, interpolate_profile, \
-                           map_direction
+from liquidctl.util import clamp, normalize_profile, interpolate_profile, map_direction
 
 _LOGGER = logging.getLogger(__name__)
 
 _SPEED_CHANNELS = {  # (base, minimum duty, maximum duty)
-    'fan':   (0x80, 25, 100),
-    'pump':  (0xc0, 50, 100),
+    "fan": (0x80, 25, 100),
+    "pump": (0xC0, 50, 100),
 }
 
 _CRITICAL_TEMPERATURE = 60
 
 _COLOR_CHANNELS = {
-    'sync':     0x0,
-    'logo':     0x1,
-    'ring':     0x2,
+    "sync": 0x0,
+    "logo": 0x1,
+    "ring": 0x2,
 }
 
 # fmt: off
@@ -71,11 +70,11 @@ _COLOR_MODES = {
 # fmt: on
 
 _ANIMATION_SPEEDS = {
-    'slowest':  0x0,
-    'slower':   0x1,
-    'normal':   0x2,
-    'faster':   0x3,
-    'fastest':  0x4,
+    "slowest": 0x0,
+    "slower": 0x1,
+    "normal": 0x2,
+    "faster": 0x3,
+    "fastest": 0x4,
 }
 
 _READ_ENDPOINT = 0x81
@@ -87,15 +86,27 @@ _WRITE_LENGTH = 65
 class Kraken2(UsbHidDriver):
     """Third generation NZXT Kraken X or M liquid cooler."""
 
-    DEVICE_KRAKENX = 'Kraken X'
-    DEVICE_KRAKENM = 'Kraken M'
+    DEVICE_KRAKENX = "Kraken X"
+    DEVICE_KRAKENM = "Kraken M"
     SUPPORTED_DEVICES = [
-        (0x1e71, 0x170e, None, 'NZXT Kraken X (X42, X52, X62 or X72)', {
-            'device_type': DEVICE_KRAKENX,
-        }),
-        (0x1e71, 0x1715, None, 'NZXT Kraken M22', {
-            'device_type': DEVICE_KRAKENM,
-        }),
+        (
+            0x1E71,
+            0x170E,
+            None,
+            "NZXT Kraken X (X42, X52, X62 or X72)",
+            {
+                "device_type": DEVICE_KRAKENX,
+            },
+        ),
+        (
+            0x1E71,
+            0x1715,
+            None,
+            "NZXT Kraken M22",
+            {
+                "device_type": DEVICE_KRAKENM,
+            },
+        ),
     ]
 
     def __init__(self, device, description, device_type=DEVICE_KRAKENX, **kwargs):
@@ -123,7 +134,7 @@ class Kraken2(UsbHidDriver):
 
     def finalize(self):
         """Deprecated."""
-        _LOGGER.warning('deprecated: use disconnect() instead')
+        _LOGGER.warning("deprecated: use disconnect() instead")
         if self._connected:
             self.disconnect()
 
@@ -134,37 +145,36 @@ class Kraken2(UsbHidDriver):
         """
 
         msg = self._read()
-        firmware = '{}.{}.{}'.format(*self._firmware_version)
+        firmware = "{}.{}.{}".format(*self._firmware_version)
         if self.device_type == self.DEVICE_KRAKENM:
-            return [('Firmware version', firmware, '')]
+            return [("Firmware version", firmware, "")]
         else:
             return [
-                ('Liquid temperature', msg[1] + msg[2]/10, '°C'),
-                ('Fan speed', msg[3] << 8 | msg[4], 'rpm'),
-                ('Pump speed', msg[5] << 8 | msg[6], 'rpm'),
-                ('Firmware version', firmware, '')
+                ("Liquid temperature", msg[1] + msg[2] / 10, "°C"),
+                ("Fan speed", msg[3] << 8 | msg[4], "rpm"),
+                ("Pump speed", msg[5] << 8 | msg[6], "rpm"),
+                ("Firmware version", firmware, ""),
             ]
 
-    def set_color(self, channel, mode, colors, speed='normal', direction='forward', **kwargs):
+    def set_color(self, channel, mode, colors, speed="normal", direction="forward", **kwargs):
         """Set the color mode for a specific channel."""
         if not self.supports_lighting:
             raise NotSupportedByDevice()
 
-        if mode == 'super':
-            _LOGGER.warning('deprecated mode, move to super-fixed, super-breathing or super-wave')
-            mode = 'super-fixed'
-        if 'backwards' in mode:
-            _LOGGER.warning('deprecated mode, move to direction=backward option')
-            mode = mode.replace('backwards-', '')
-            direction = 'backward'
+        if mode == "super":
+            _LOGGER.warning("deprecated mode, move to super-fixed, super-breathing or super-wave")
+            mode = "super-fixed"
+        if "backwards" in mode:
+            _LOGGER.warning("deprecated mode, move to direction=backward option")
+            mode = mode.replace("backwards-", "")
+            direction = "backward"
 
         mval, mod2, mod4, mincolors, maxcolors, ringonly = _COLOR_MODES[mode]
         mod2 += map_direction(direction, 0, 0x10)
 
-        if ringonly and channel != 'ring':
-            _LOGGER.warning('mode=%s unsupported with channel=%s, dropping to ring',
-                            mode, channel)
-            channel = 'ring'
+        if ringonly and channel != "ring":
+            _LOGGER.warning("mode=%s unsupported with channel=%s, dropping to ring", mode, channel)
+            channel = "ring"
 
         steps = self._generate_steps(colors, mincolors, maxcolors, mode, ringonly)
         sval = _ANIMATION_SPEEDS[speed]
@@ -174,25 +184,24 @@ class Kraken2(UsbHidDriver):
             byte4 = sval | seq | mod4
             logo = [leds[0][1], leds[0][0], leds[0][2]]
             ring = list(itertools.chain(*leds[1:]))
-            self._write([0x2, 0x4c, byte2, mval, byte4] + logo + ring)
+            self._write([0x2, 0x4C, byte2, mval, byte4] + logo + ring)
 
     def _generate_steps(self, colors, mincolors, maxcolors, mode, ringonly):
         colors = list(colors)
         if len(colors) < mincolors:
-            raise ValueError(f'not enough colors for mode={mode}, at least {mincolors} required')
+            raise ValueError(f"not enough colors for mode={mode}, at least {mincolors} required")
         elif maxcolors == 0:
             if len(colors) > 0:
-                _LOGGER.warning('too many colors for mode=%s, none needed', mode)
+                _LOGGER.warning("too many colors for mode=%s, none needed", mode)
             colors = [(0, 0, 0)]  # discard the input but ensure at least one step
         elif len(colors) > maxcolors:
-            _LOGGER.warning('too many colors for mode=%s, dropping to %d',
-                            mode, maxcolors)
+            _LOGGER.warning("too many colors for mode=%s, dropping to %d", mode, maxcolors)
             colors = colors[:maxcolors]
         # generate steps from mode and colors: usually each color set by the user generates
         # one step, where it is specified to all leds and the device handles the animation;
         # but in super mode there is a single step and each color directly controls a led
-        if 'super' not in mode:
-            steps = [(color,)*9 for color in colors]
+        if "super" not in mode:
+            steps = [(color,) * 9 for color in colors]
         elif ringonly:
             steps = [[(0, 0, 0)] + colors]
         else:
@@ -212,9 +221,10 @@ class Kraken2(UsbHidDriver):
         cbase, dmin, dmax = _SPEED_CHANNELS[channel]
         for i, (temp, duty) in enumerate(interp):
             duty = clamp(duty, dmin, dmax)
-            _LOGGER.info('setting %s PWM duty to %d%% for liquid temperature >= %d°C',
-                         channel, duty, temp)
-            self._write([0x2, 0x4d, cbase + i, temp, duty])
+            _LOGGER.info(
+                "setting %s PWM duty to %d%% for liquid temperature >= %d°C", channel, duty, temp
+            )
+            self._write([0x2, 0x4D, cbase + i, temp, duty])
 
     def set_fixed_speed(self, channel, duty, **kwargs):
         """Set channel to a fixed speed."""
@@ -231,8 +241,8 @@ class Kraken2(UsbHidDriver):
             raise NotSupportedByDevice()
         cbase, dmin, dmax = _SPEED_CHANNELS[channel]
         duty = clamp(duty, dmin, dmax)
-        _LOGGER.info('setting %s PWM duty to %d%%', channel, duty)
-        self._write([0x2, 0x4d, cbase & 0x70, 0, duty])
+        _LOGGER.info("setting %s PWM duty to %d%%", channel, duty)
+        self._write([0x2, 0x4D, cbase & 0x70, 0, duty])
 
     @property
     def supports_cooling_profiles(self):
@@ -248,11 +258,11 @@ class Kraken2(UsbHidDriver):
         if clear_first:
             self.device.clear_enqueued_reports()
         msg = self.device.read(_READ_LENGTH)
-        self._firmware_version = (msg[0xb], msg[0xc] << 8 | msg[0xd], msg[0xe])
+        self._firmware_version = (msg[0xB], msg[0xC] << 8 | msg[0xD], msg[0xE])
         return msg
 
     def _write(self, data):
-        padding = [0x0]*(_WRITE_LENGTH - len(data))
+        padding = [0x0] * (_WRITE_LENGTH - len(data))
         self.device.write(data + padding)
 
 

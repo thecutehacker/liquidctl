@@ -35,18 +35,18 @@ class Hue2Accessory(Enum):
     True
     """
 
-    HUE_PLUS_LED_STRIP = (0x01, 'HUE+ LED Strip')
-    AER_RGB1_FAN = (0x02, 'AER RGB 1')
-    HUE2_LED_STRIP_300 = (0x04, 'HUE 2 LED Strip 300 mm')
-    HUE2_LED_STRIP_250 = (0x05, 'HUE 2 LED Strip 250 mm')
-    HUE2_LED_STRIP_200 = (0x06, 'HUE 2 LED Strip 200 mm')
-    HUE2_CABLE_COMB = (0x07, 'HUE 2 Cable Comb')
-    HUE2_UNDERGLOW_300 = (0x09, 'HUE 2 Underglow 300 mm')
-    HUE2_UNDERGLOW_200 = (0x0a, 'HUE 2 Underglow 200 mm')
-    AER_RGB2_120 = (0x0b, 'AER RGB 2 120 mm')
-    AER_RGB2_140 = (0x0c, 'AER RGB 2 140 mm')
-    KRAKENX_GEN4_RING = (0x10, 'Kraken X (X53, X63 or X73) Pump Ring')
-    KRAKENX_GEN4_LOGO = (0x11, 'Kraken X (X53, X63 or X73) Pump Logo')
+    HUE_PLUS_LED_STRIP = (0x01, "HUE+ LED Strip")
+    AER_RGB1_FAN = (0x02, "AER RGB 1")
+    HUE2_LED_STRIP_300 = (0x04, "HUE 2 LED Strip 300 mm")
+    HUE2_LED_STRIP_250 = (0x05, "HUE 2 LED Strip 250 mm")
+    HUE2_LED_STRIP_200 = (0x06, "HUE 2 LED Strip 200 mm")
+    HUE2_CABLE_COMB = (0x07, "HUE 2 Cable Comb")
+    HUE2_UNDERGLOW_300 = (0x09, "HUE 2 Underglow 300 mm")
+    HUE2_UNDERGLOW_200 = (0x0A, "HUE 2 Underglow 200 mm")
+    AER_RGB2_120 = (0x0B, "AER RGB 2 120 mm")
+    AER_RGB2_140 = (0x0C, "AER RGB 2 140 mm")
+    KRAKENX_GEN4_RING = (0x10, "Kraken X (X53, X63 or X73) Pump Ring")
+    KRAKENX_GEN4_LOGO = (0x11, "Kraken X (X53, X63 or X73) Pump Logo")
 
     def __new__(cls, value, pretty_name):
         member = object.__new__(cls)
@@ -57,8 +57,8 @@ class Hue2Accessory(Enum):
     @classmethod
     def _missing_(cls, value):
         dummy = object.__new__(cls)
-        dummy.pretty_name = 'Unknown'
-        dummy._name_ = f'UNKNOWN_{value}'
+        dummy.pretty_name = "Unknown"
+        dummy._name_ = f"UNKNOWN_{value}"
         dummy._value_ = value
         return dummy
 
@@ -85,14 +85,15 @@ class LazyHexRepr:
     >>> '%r' % LazyHexRepr(b'abc', end=-1)
     '61:62'
     """
-    def __init__(self, data, start=None, end=None, sep=':'):
+
+    def __init__(self, data, start=None, end=None, sep=":"):
         self.data = data
         self.start = start
         self.end = end
         self.sep = sep
 
     def __repr__(self):
-        hexvals = map(lambda x: f'{x:02x}', self.data[self.start: self.end])
+        hexvals = map(lambda x: f"{x:02x}", self.data[self.start : self.end])
         return self.sep.join(hexvals)
 
 
@@ -103,6 +104,7 @@ class _RelaxedNamesEnum(EnumMeta):
 
 class RelaxedNamesEnum(Enum, metaclass=_RelaxedNamesEnum):
     """Enum class where name lookup is case insensitive."""
+
     pass
 
 
@@ -123,7 +125,7 @@ def clamp(value, clampmin, clampmax):
     """Clamp numeric `value` to interval [`clampmin`, `clampmax`]."""
     clamped = max(clampmin, min(clampmax, value))
     if clamped != value:
-        _LOGGER.debug('clamped %s to interval [%s, %s]', value, clampmin, clampmax)
+        _LOGGER.debug("clamped %s to interval [%s, %s]", value, clampmin, clampmax)
     return clamped
 
 
@@ -139,9 +141,9 @@ def fraction_of_byte(ratio=None, percentage=None):
         ratio = percentage / 100
     if ratio is not None:
         if ratio < 0 or ratio > 1:
-            raise ValueError('cannot express ratios outside of [0, 1]')
+            raise ValueError("cannot express ratios outside of [0, 1]")
         return round(ratio * 255)
-    raise ValueError('either ratio or percentage must not be None')
+    raise ValueError("either ratio or percentage must not be None")
 
 
 def u16le_from(buffer, offset=0):
@@ -152,7 +154,7 @@ def u16le_from(buffer, offset=0):
     >>> u16le_from(b'\x45\x05\x03', offset=1)
     773
     """
-    return int.from_bytes(buffer[offset: offset + 2], byteorder='little')
+    return int.from_bytes(buffer[offset : offset + 2], byteorder="little")
 
 
 def u16be_from(buffer, offset=0):
@@ -163,13 +165,12 @@ def u16be_from(buffer, offset=0):
     >>> u16be_from(b'\x45\x05\x03', offset=1)
     1283
     """
-    return int.from_bytes(buffer[offset: offset + 2], byteorder='big')
+    return int.from_bytes(buffer[offset : offset + 2], byteorder="big")
 
 
 def delta(profile):
     """Compute a profile's Δx and Δy."""
-    return [(cur[0]-prev[0], cur[1]-prev[1])
-            for cur, prev in zip(profile[1:], profile[:-1])]
+    return [(cur[0] - prev[0], cur[1] - prev[1]) for cur, prev in zip(profile[1:], profile[:-1])]
 
 
 def normalize_profile(profile, critx, max_value=100):
@@ -233,7 +234,7 @@ def interpolate_profile(profile, x):
             break
     if lower[0] == upper[0]:
         return lower[1]
-    return round(lower[1] + (x - lower[0])/(upper[0] - lower[0])*(upper[1] - lower[1]))
+    return round(lower[1] + (x - lower[0]) / (upper[0] - lower[0]) * (upper[1] - lower[1]))
 
 
 def color_from_str(x):
@@ -294,33 +295,33 @@ def color_from_str(x):
     def parse_triple(sub, maxvalues):
         literal = literal_eval(sub)
         if not isinstance(literal, tuple) or len(literal) != 3:
-            raise ValueError(f'expected 3-element triple: {x}')
+            raise ValueError(f"expected 3-element triple: {x}")
         for value, maxvalue in zip(literal, maxvalues):
             if not isinstance(value, int) and not isinstance(value, float):
-                raise ValueError(f'expected float or int: {value} in {x}')
+                raise ValueError(f"expected float or int: {value} in {x}")
             if value < 0 or value > maxvalue:
-                raise ValueError(f'expected value in range [0, {maxvalue}]: {value} in {x}')
+                raise ValueError(f"expected value in range [0, {maxvalue}]: {value} in {x}")
         return literal
 
     xl = x.lower()
 
-    if xl.startswith('rgb('):
+    if xl.startswith("rgb("):
         r, g, b = parse_triple(x[3:], (255, 255, 255))
         return [r, g, b]
-    elif xl.startswith('hsv('):
+    elif xl.startswith("hsv("):
         h, s, v = parse_triple(x[3:], (360, 100, 100))
-        return list(map(lambda b: round(b*255), colorsys.hsv_to_rgb(h/360, s/100, v/100)))
-    elif xl.startswith('hsl('):
+        return list(map(lambda b: round(b * 255), colorsys.hsv_to_rgb(h / 360, s / 100, v / 100)))
+    elif xl.startswith("hsl("):
         h, s, l = parse_triple(x[3:], (360, 100, 100))
-        return list(map(lambda b: round(b*255), colorsys.hls_to_rgb(h/360, l/100, s/100)))
+        return list(map(lambda b: round(b * 255), colorsys.hls_to_rgb(h / 360, l / 100, s / 100)))
     elif len(x) == 6:
         return list(bytes.fromhex(x))
-    elif len(x) == 7 and x.startswith('#'):
+    elif len(x) == 7 and x.startswith("#"):
         return list(bytes.fromhex(x[1:]))
-    elif len(x) == 8 and xl.startswith('0x'):
+    elif len(x) == 8 and xl.startswith("0x"):
         return list(bytes.fromhex(x[2:]))
     else:
-        raise ValueError(f'cannot parse color: {x}')
+        raise ValueError(f"cannot parse color: {x}")
 
 
 def check_unsafe(*reqs, unsafe=None, error=False, **kwargs):
@@ -393,9 +394,9 @@ def map_direction(direction, forward=None, backward=None):
     ValueError: invalid direction: 'fooowwd'
     """
 
-    if 'forwards'.startswith(direction):
+    if "forwards".startswith(direction):
         return forward
-    elif 'backwards'.startswith(direction):
+    elif "backwards".startswith(direction):
         return backward
     else:
-        raise ValueError(f'invalid direction: {direction!r}')
+        raise ValueError(f"invalid direction: {direction!r}")

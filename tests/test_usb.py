@@ -7,13 +7,13 @@ from liquidctl.driver.usb import UsbDriver, UsbHidDriver
 @pytest.fixture
 def emulated_hid_device():
     hiddev = MockHidapiDevice()
-    return UsbHidDriver(hiddev, 'Test')
+    return UsbHidDriver(hiddev, "Test")
 
 
 @pytest.fixture
 def emulated_usb_device():
     usbdev = MockHidapiDevice()  # hack, should mock PyUsbDevice
-    dev = UsbDriver(usbdev, 'Test')
+    dev = UsbDriver(usbdev, "Test")
 
     return dev
 

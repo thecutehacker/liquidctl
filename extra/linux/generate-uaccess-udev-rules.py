@@ -4,14 +4,14 @@ from inspect import cleandoc
 # This script is meant to be executed from this directory or the project root.
 # We use that assumption to make Python pick the local liquidctl modules,
 # instead other versions that may be installed on the environment/system.
-sys.path = ['../..', ''] + sys.path
+sys.path = ["../..", ""] + sys.path
 
 from liquidctl.driver.base import find_all_subclasses
 from liquidctl.driver.nvidia import _NvidiaI2CDriver
 from liquidctl.driver.usb import BaseUsbDriver
 
 
-HEADER = '''
+HEADER = """
 # Rules that grant unprivileged access to devices supported by liquidctl
 #
 # Users and distros are encouraged to use these if they want liquidctl to work
@@ -41,15 +41,15 @@ HEADER = '''
 #
 #     $ python generate-uaccess-udev-rules.py > 71-liquidctl.rules
 #
-'''
+"""
 
-MANUAL_RULES = r'''
+MANUAL_RULES = r"""
     # Section: special cases
 
     # Host SMBus on Intel mainstream/HEDT platforms
     KERNEL=="i2c-*", DRIVERS=="i801_smbus", TAG+="uaccess", \
         RUN{builtin}="kmod load i2c-dev"
-'''
+"""
 
 
 print(cleandoc(HEADER))
@@ -60,7 +60,7 @@ print(cleandoc(MANUAL_RULES))
 
 print()
 print()
-print(f'# Section: NVIDIA graphics cards')
+print(f"# Section: NVIDIA graphics cards")
 
 nvidia_devs = {}
 
@@ -73,25 +73,27 @@ for driver in find_all_subclasses(_NvidiaI2CDriver):
         else:
             nvidia_devs[ids] = [description]
 
-nvidia_devs = [(svid, did, sdid, description) for (svid, did, sdid), description in nvidia_devs.items()]
+nvidia_devs = [
+    (svid, did, sdid, description) for (svid, did, sdid), description in nvidia_devs.items()
+]
 nvidia_devs.sort(key=lambda x: x[3][0])
 
 for svid, did, sdid, descriptions in nvidia_devs:
     print()
     for desc in descriptions:
-        desc = desc.replace(' (experimental)', '')
-        print(f'# {desc}')
-    rule = f'''
+        desc = desc.replace(" (experimental)", "")
+        print(f"# {desc}")
+    rule = f"""
         KERNEL=="i2c-*", ATTR{{name}}=="NVIDIA i2c adapter 1 *", ATTRS{{vendor}}=="0x10de", \\
             ATTRS{{device}}=="{did:#06x}", ATTRS{{subsystem_vendor}}=="{svid:#06x}", \\
             ATTRS{{subsystem_device}}=="{sdid:#06x}", DRIVERS=="nvidia", TAG+="uaccess", \\
             RUN{{builtin}}="kmod load i2c-dev"
-    '''
+    """
     print(cleandoc(rule))
 
 print()
 print()
-print(f'# Section: USB devices and USB HIDs')
+print(f"# Section: USB devices and USB HIDs")
 
 usb_devs = {}
 
@@ -110,6 +112,8 @@ usb_devs.sort(key=lambda x: x[2][0])
 for vid, pid, descriptions in usb_devs:
     print()
     for desc in descriptions:
-        desc = desc.replace(' (experimental)', '')
-        print(f'# {desc}')
-    print(f'SUBSYSTEMS=="usb", ATTRS{{idVendor}}=="{vid:04x}", ATTRS{{idProduct}}=="{pid:04x}", TAG+="uaccess"')
+        desc = desc.replace(" (experimental)", "")
+        print(f"# {desc}")
+    print(
+        f'SUBSYSTEMS=="usb", ATTRS{{idVendor}}=="{vid:04x}", ATTRS{{idProduct}}=="{pid:04x}", TAG+="uaccess"'
+    )

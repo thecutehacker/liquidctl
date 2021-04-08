@@ -11,22 +11,25 @@ from liquidctl.util import Hue2Accessory
 
 # https://github.com/liquidctl/liquidctl/issues/160#issuecomment-664044103
 _SAMPLE_STATUS = bytes.fromhex(
-    '7502200036000b51535834353320012101a80635350000000000000000000000'
-    '0000000000000000000000000000000000000000000000000000000000000000'
+    "7502200036000b51535834353320012101a80635350000000000000000000000"
+    "0000000000000000000000000000000000000000000000000000000000000000"
 )
 # https://github.com/liquidctl/liquidctl/issues/160#issue-665781804
 _FAULTY_STATUS = bytes.fromhex(
-    '7502200036000b5153583435332001ffffcc0a64640000000000000000000000'
-    '0000000000000000000000000000000000000000000000000000000000000000'
+    "7502200036000b5153583435332001ffffcc0a64640000000000000000000000"
+    "0000000000000000000000000000000000000000000000000000000000000000"
 )
 
 
 @pytest.fixture
 def mockKrakenXDevice():
     device = _MockKrakenDevice(raw_led_channels=len(_COLOR_CHANNELS_KRAKENX) - 1)
-    dev = KrakenX3(device, 'Corsair Kraken X73',
-                   speed_channels=_SPEED_CHANNELS_KRAKENX,
-                   color_channels=_COLOR_CHANNELS_KRAKENX)
+    dev = KrakenX3(
+        device,
+        "Corsair Kraken X73",
+        speed_channels=_SPEED_CHANNELS_KRAKENX,
+        color_channels=_COLOR_CHANNELS_KRAKENX,
+    )
 
     dev.connect()
     return dev
@@ -35,9 +38,9 @@ def mockKrakenXDevice():
 @pytest.fixture
 def mockKrakenZDevice():
     device = _MockKrakenDevice(raw_led_channels=0)
-    dev = KrakenZ3(device, 'Mock Kraken Z73',
-                   speed_channels=_SPEED_CHANNELS_KRAKENZ,
-                   color_channels={})
+    dev = KrakenZ3(
+        device, "Mock Kraken Z73", speed_channels=_SPEED_CHANNELS_KRAKENZ, color_channels={}
+    )
 
     dev.connect()
     return dev
@@ -64,16 +67,16 @@ class _MockKrakenDevice(MockHidapiDevice):
 def test_kracken_x_device_parses_status_fields(mockKrakenXDevice):
     mockKrakenXDevice.device.preload_read(Report(0, _SAMPLE_STATUS))
     temperature, pump_speed, pump_duty = mockKrakenXDevice.get_status()
-    assert temperature == ('Liquid temperature', 33.1, '°C')
-    assert pump_speed == ('Pump speed', 1704, 'rpm')
-    assert pump_duty == ('Pump duty', 53, '%')
+    assert temperature == ("Liquid temperature", 33.1, "°C")
+    assert pump_speed == ("Pump speed", 1704, "rpm")
+    assert pump_duty == ("Pump duty", 53, "%")
 
 
 def test_kracken_x_device_warns_if_faulty_temperature(mockKrakenXDevice, caplog):
     mockKrakenXDevice.device.preload_read(Report(0, _FAULTY_STATUS))
     mockKrakenXDevice.get_status()
 
-    assert 'unexpected temperature reading' in caplog.text
+    assert "unexpected temperature reading" in caplog.text
 
 
 def test_kracken_x_device_not_totally_broken(mockKrakenXDevice):
@@ -81,11 +84,9 @@ def test_kracken_x_device_not_totally_broken(mockKrakenXDevice):
     dev = mockKrakenXDevice
 
     dev.initialize()
-    dev.set_color(channel='ring', mode='fixed', colors=iter([[3, 2, 1]]),
-                  speed='fastest')
-    dev.set_speed_profile(channel='pump',
-                          profile=iter([(20, 20), (30, 50), (40, 100)]))
-    dev.set_fixed_speed(channel='pump', duty=50)
+    dev.set_color(channel="ring", mode="fixed", colors=iter([[3, 2, 1]]), speed="fastest")
+    dev.set_speed_profile(channel="pump", profile=iter([(20, 20), (30, 50), (40, 100)]))
+    dev.set_fixed_speed(channel="pump", duty=50)
 
 
 def test_kracken_z_device_not_totally_broken(mockKrakenZDevice):
@@ -95,6 +96,5 @@ def test_kracken_z_device_not_totally_broken(mockKrakenZDevice):
     dev.initialize()
     dev.device.preload_read(Report(0, _SAMPLE_STATUS))
     dev.get_status()
-    dev.set_speed_profile(channel='fan',
-                          profile=iter([(20, 20), (30, 50), (40, 100)]))
-    dev.set_fixed_speed(channel='pump', duty=50)
+    dev.set_speed_profile(channel="fan", profile=iter([(20, 20), (30, 50), (40, 100)]))
+    dev.set_fixed_speed(channel="pump", duty=50)

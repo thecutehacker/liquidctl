@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 
 from liquidctl.keyval import RuntimeStorage, _FilesystemBackend
 
-Report = namedtuple('Report', ['number', 'data'])
+Report = namedtuple("Report", ["number", "data"])
 
 
 def noop(*args, **kwargs):
@@ -14,14 +14,21 @@ def noop(*args, **kwargs):
 class MockRuntimeStorage(RuntimeStorage):
     def __init__(self, key_prefixes, backend=None):
         if not backend:
-            run_dir = mkdtemp('run_dir')
+            run_dir = mkdtemp("run_dir")
             backend = _FilesystemBackend(key_prefixes, runtime_dirs=[run_dir])
         super().__init__(key_prefixes, backend)
 
 
 class MockHidapiDevice:
-    def __init__(self, vendor_id=None, product_id=None, release_number=None,
-                 serial_number=None, bus=None, address=None):
+    def __init__(
+        self,
+        vendor_id=None,
+        product_id=None,
+        release_number=None,
+        serial_number=None,
+        bus=None,
+        address=None,
+    ):
         self.vendor_id = vendor_id
         self.product_id = product_id
         self.release_number = release_number
@@ -66,7 +73,7 @@ class MockHidapiDevice:
             # enough "ioctl (GFEATURE): Value too large for defined data type"
             # may happen on Linux; see:
             # https://github.com/liquidctl/liquidctl/issues/151#issuecomment-665119675
-            assert length >= len(data) + 1, 'buffer not large enough for received report'
+            assert length >= len(data) + 1, "buffer not large enough for received report"
             return [number] + list(data)[:length]
         return None
 
@@ -74,9 +81,17 @@ class MockHidapiDevice:
         return self.write(data)
 
 
-class MockPyusbDevice():
-    def __init__(self, vendor_id=None, product_id=None, release_number=None,
-                 serial_number=None, bus=None, address=None, port=None):
+class MockPyusbDevice:
+    def __init__(
+        self,
+        vendor_id=None,
+        product_id=None,
+        release_number=None,
+        serial_number=None,
+        bus=None,
+        address=None,
+        port=None,
+    ):
         self.vendor_id = vendor_id
         self.product_id = product_id
         self.release_numer = release_number
@@ -98,26 +113,36 @@ class MockPyusbDevice():
         return [0] * length
 
     def write(self, endpoint, data, timeout=None):
-        self._sent_xfers.append(('write', endpoint, data))
+        self._sent_xfers.append(("write", endpoint, data))
 
-    def ctrl_transfer(self, bmRequestType, bRequest, wValue=0, wIndex=0,
-                      data_or_wLength=None, timeout=None):
-        self._sent_xfers.append(('ctrl_transfer', bmRequestType, bRequest,
-                                 wValue, wIndex, data_or_wLength))
+    def ctrl_transfer(
+        self, bmRequestType, bRequest, wValue=0, wIndex=0, data_or_wLength=None, timeout=None
+    ):
+        self._sent_xfers.append(
+            ("ctrl_transfer", bmRequestType, bRequest, wValue, wIndex, data_or_wLength)
+        )
 
     def _reset_sent(self):
         self._sent_xfers = deque()
         self._responses = deque()
 
 
-VirtualEeprom = namedtuple('VirtualEeprom', ['name', 'data'])
+VirtualEeprom = namedtuple("VirtualEeprom", ["name", "data"])
 
 
 class VirtualSmbus:
-    def __init__(self, address_count=256, register_count=256, name='i2c-99',
-                 description='Virtual', parent_vendor=0xff01, parent_device=0xff02,
-                 parent_subsystem_vendor=0xff10, parent_subsystem_device=0xff20,
-                 parent_driver='virtual'):
+    def __init__(
+        self,
+        address_count=256,
+        register_count=256,
+        name="i2c-99",
+        description="Virtual",
+        parent_vendor=0xFF01,
+        parent_device=0xFF02,
+        parent_subsystem_vendor=0xFF10,
+        parent_subsystem_device=0xFF20,
+        parent_driver="virtual",
+    ):
 
         self._open = False
         self._data = [[0] * register_count for _ in range(address_count)]
@@ -135,42 +160,42 @@ class VirtualSmbus:
 
     def read_byte(self, address):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         return self._data[address][0]
 
     def read_byte_data(self, address, register):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         return self._data[address][register]
 
     def read_word_data(self, address, register):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         return self._data[address][register]
 
     def read_block_data(self, address, register):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         return self._data[address][register]
 
     def write_byte(self, address, value):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         self._data[address][0] = value
 
     def write_byte_data(self, address, register, value):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         self._data[address][register] = value
 
     def write_word_data(self, address, register, value):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         self._data[address][register] = value
 
     def write_block_data(self, address, register, data):
         if not self._open:
-            raise OSError('closed')
+            raise OSError("closed")
         self._data[address][register] = data
 
     def close(self):

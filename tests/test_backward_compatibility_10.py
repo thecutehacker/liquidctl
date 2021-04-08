@@ -19,15 +19,14 @@ SPECTRUM = [
     (56, 193, 66),
     (116, 217, 170),
     (166, 158, 255),
-    (208, 0, 122)
+    (208, 0, 122),
 ]
 
 
 @pytest.fixture
 def mockDevice():
     device = MockHidapiDevice()
-    dev = KrakenTwoDriver(device, 'Mock X62',
-                                  device_type=KrakenTwoDriver.DEVICE_KRAKENX)
+    dev = KrakenTwoDriver(device, "Mock X62", device_type=KrakenTwoDriver.DEVICE_KRAKENX)
 
     dev.connect()
     return dev
@@ -35,6 +34,7 @@ def mockDevice():
 
 def test_pre11_apis_find_does_not_raise():
     import liquidctl.cli
+
     liquidctl.cli.find_all_supported_devices()
 
 
@@ -45,7 +45,7 @@ def test_pre11_apis_connect_as_initialize(mockDevice):
 
 def test_pre11_apis_deprecated_super_mode(mockDevice):
     # deprecated in favor of super-fixed, super-breathing and super-wave
-    mockDevice.set_color('sync', 'super', [(128, 0, 255)] + SPECTRUM, 'normal')
+    mockDevice.set_color("sync", "super", [(128, 0, 255)] + SPECTRUM, "normal")
 
 
 def test_pre11_apis_status_order(mockDevice):

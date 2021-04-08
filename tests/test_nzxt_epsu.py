@@ -9,10 +9,10 @@ class _MockPsuDevice(MockHidapiDevice):
         super().write(data)
         data = data[1:]  # skip unused report ID
         reply = bytearray(64)
-        reply[0:2] = (0xaa, data[2])
+        reply[0:2] = (0xAA, data[2])
         if data[5] == 0x06:
             reply[2] = data[2] - 2
-        elif data[5] == 0xfc:
+        elif data[5] == 0xFC:
             reply[2:4] = (0x11, 0x41)
         self.preload_read(Report(0, reply[0:]))
 
@@ -20,7 +20,7 @@ class _MockPsuDevice(MockHidapiDevice):
 @pytest.fixture
 def mockPsuDevice():
     device = _MockPsuDevice()
-    return NzxtEPsu(device, 'mock NZXT E500 PSU')
+    return NzxtEPsu(device, "mock NZXT E500 PSU")
 
 
 def test_psu_device_initialize(mockPsuDevice):
@@ -34,8 +34,8 @@ def test_psu_device_status(mockPsuDevice):
     mockPsuDevice.connect()
     status = mockPsuDevice.get_status()
 
-    fw = next(filter(lambda x: x[0] == 'Firmware version', status))
-    assert fw == ('Firmware version', 'A017/40983', '')
+    fw = next(filter(lambda x: x[0] == "Firmware version", status))
+    assert fw == ("Firmware version", "A017/40983", "")
 
     sent = mockPsuDevice.device.sent
-    assert sent[0] == Report(0, [0xad, 0, 3, 1, 0x60, 0xfc] + 58*[0])
+    assert sent[0] == Report(0, [0xAD, 0, 3, 1, 0x60, 0xFC] + 58 * [0])

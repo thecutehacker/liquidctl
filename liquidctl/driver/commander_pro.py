@@ -24,8 +24,15 @@ from liquidctl.driver.usb import UsbHidDriver
 from liquidctl.error import NotSupportedByDevice
 from liquidctl.keyval import RuntimeStorage
 from liquidctl.pmbus import compute_pec
-from liquidctl.util import clamp, fraction_of_byte, u16be_from, u16le_from, \
-                           normalize_profile, check_unsafe, map_direction
+from liquidctl.util import (
+    clamp,
+    fraction_of_byte,
+    u16be_from,
+    u16le_from,
+    normalize_profile,
+    check_unsafe,
+    map_direction,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,21 +73,21 @@ _FAN_MODE_PWM = 0x02
 _PROFILE_LENGTH = 6
 _CRITICAL_TEMPERATURE = 60
 _CRITICAL_TEMPERATURE_HIGH = 100
-_MAX_FAN_RPM = 5000             # I have no idea if this is a good value or not
+_MAX_FAN_RPM = 5000  # I have no idea if this is a good value or not
 
 _MODES = {
-    'off': 0x04,            # this is a special case of fixed
-    'rainbow': 0x00,
-    'color_shift': 0x01,
-    'color_pulse': 0x02,
-    'color_wave': 0x03,
-    'fixed': 0x04,
+    "off": 0x04,  # this is a special case of fixed
+    "rainbow": 0x00,
+    "color_shift": 0x01,
+    "color_pulse": 0x02,
+    "color_wave": 0x03,
+    "fixed": 0x04,
     # 'temperature': 0x05,    # ignore this
-    'visor': 0x06,
-    'marquee': 0x07,
-    'blink': 0x08,
-    'sequential': 0x09,
-    'rainbow2': 0x0a,
+    "visor": 0x06,
+    "marquee": 0x07,
+    "blink": 0x08,
+    "sequential": 0x09,
+    "rainbow2": 0x0A,
 }
 
 
@@ -89,40 +96,54 @@ def _prepare_profile(original, critcalTempature):
     normal = normalize_profile(clamped, critcalTempature, _MAX_FAN_RPM)
     missing = _PROFILE_LENGTH - len(normal)
     if missing < 0:
-        raise ValueError(f'too many points in profile (remove {-missing})')
+        raise ValueError(f"too many points in profile (remove {-missing})")
     if missing > 0:
         normal += missing * [(critcalTempature, _MAX_FAN_RPM)]
     return normal
 
 
 def _quoted(*names):
-    return ', '.join(map(repr, names))
+    return ", ".join(map(repr, names))
 
 
 def _get_fan_mode_description(mode):
-    """This will convert the fan mode value to a descriptive name.
-    """
+    """This will convert the fan mode value to a descriptive name."""
 
     if mode == _FAN_MODE_DISCONNECTED:
-        return 'Auto/Disconnected'
+        return "Auto/Disconnected"
     elif mode == _FAN_MODE_DC:
-        return 'DC'
+        return "DC"
     elif mode == _FAN_MODE_PWM:
-        return 'PWM'
+        return "PWM"
     else:
-        return 'UNKNOWN'
+        return "UNKNOWN"
 
 
 class CommanderPro(UsbHidDriver):
     """Corsair Commander Pro LED and fan hub"""
 
     SUPPORTED_DEVICES = [
-        (0x1b1c, 0x0c10, None, 'Corsair Commander Pro (experimental)',
-            {'fan_count': 6, 'temp_probs': 4, 'led_channels': 2}),
-        (0x1b1c, 0x0c0b, None, 'Corsair Lighting Node Pro (experimental)',
-            {'fan_count': 0, 'temp_probs': 0, 'led_channels': 2}),
-        (0x1b1c, 0x0c1a, None, 'Corsair Lighting Node Core (experimental)',
-            {'fan_count': 0, 'temp_probs': 0, 'led_channels': 1}),
+        (
+            0x1B1C,
+            0x0C10,
+            None,
+            "Corsair Commander Pro (experimental)",
+            {"fan_count": 6, "temp_probs": 4, "led_channels": 2},
+        ),
+        (
+            0x1B1C,
+            0x0C0B,
+            None,
+            "Corsair Lighting Node Pro (experimental)",
+            {"fan_count": 0, "temp_probs": 0, "led_channels": 2},
+        ),
+        (
+            0x1B1C,
+            0x0C1A,
+            None,
+            "Corsair Lighting Node Core (experimental)",
+            {"fan_count": 0, "temp_probs": 0, "led_channels": 1},
+        ),
     ]
 
     def __init__(self, device, description, fan_count, temp_probs, led_channels, **kwargs):
@@ -130,11 +151,11 @@ class CommanderPro(UsbHidDriver):
 
         # the following fields are only initialized in connect()
         self._data = None
-        self._fan_names = [f'fan{i+1}' for i in range(fan_count)]
+        self._fan_names = [f"fan{i+1}" for i in range(fan_count)]
         if led_channels == 1:
-            self._led_names = ['led']
+            self._led_names = ["led"]
         else:
-            self._led_names = [f'led{i+1}' for i in range(led_channels)]
+            self._led_names = [f"led{i+1}" for i in range(led_channels)]
         self._temp_probs = temp_probs
         self._fan_count = fan_count
 
@@ -144,12 +165,12 @@ class CommanderPro(UsbHidDriver):
         if runtime_storage:
             self._data = runtime_storage
         else:
-            ids = f'vid{self.vendor_id:04x}_pid{self.product_id:04x}'
+            ids = f"vid{self.vendor_id:04x}_pid{self.product_id:04x}"
             # must use the HID path because there is no serial number; however,
             # these can be quite long on Windows and macOS, so only take the
             # numbers, since they are likely the only parts that vary between two
             # devices of the same model
-            loc = 'loc' + '_'.join(re.findall(r'\d+', self.address))
+            loc = "loc" + "_".join(re.findall(r"\d+", self.address))
             self._data = RuntimeStorage(key_prefixes=[ids, loc])
         return ret
 
@@ -166,36 +187,36 @@ class CommanderPro(UsbHidDriver):
         fw_version = (res[1], res[2], res[3])
 
         res = self._send_command(_CMD_GET_BOOTLOADER)
-        bootloader_version = (res[1], res[2])               # is it possible for there to be a third value?
+        bootloader_version = (res[1], res[2])  # is it possible for there to be a third value?
 
         status = [
-            ('Firmware version', '{}.{}.{}'.format(*fw_version), ''),
-            ('Bootloader version', '{}.{}'.format(*bootloader_version), ''),
+            ("Firmware version", "{}.{}.{}".format(*fw_version), ""),
+            ("Bootloader version", "{}.{}".format(*bootloader_version), ""),
         ]
 
         if self._temp_probs > 0:
             res = self._send_command(_CMD_GET_TEMP_CONFIG)
             temp_connected = res[1:5]
-            self._data.store('temp_sensors_connected', temp_connected)
+            self._data.store("temp_sensors_connected", temp_connected)
             status += [
-                ('Temp sensor 1', 'Connected' if temp_connected[0] else 'Not Connected', ''),
-                ('Temp sensor 2', 'Connected' if temp_connected[1] else 'Not Connected', ''),
-                ('Temp sensor 3', 'Connected' if temp_connected[2] else 'Not Connected', ''),
-                ('Temp sensor 4', 'Connected' if temp_connected[3] else 'Not Connected', ''),
+                ("Temp sensor 1", "Connected" if temp_connected[0] else "Not Connected", ""),
+                ("Temp sensor 2", "Connected" if temp_connected[1] else "Not Connected", ""),
+                ("Temp sensor 3", "Connected" if temp_connected[2] else "Not Connected", ""),
+                ("Temp sensor 4", "Connected" if temp_connected[3] else "Not Connected", ""),
             ]
 
         if self._fan_count > 0:
             # get the information about how the fans are connected, probably want to save this for later
             res = self._send_command(_CMD_GET_FAN_MODES)
-            fanModes = res[1:self._fan_count+1]
-            self._data.store('fan_modes', fanModes)
+            fanModes = res[1 : self._fan_count + 1]
+            self._data.store("fan_modes", fanModes)
             status += [
-                ('Fan 1 Mode', _get_fan_mode_description(fanModes[0]), ''),
-                ('Fan 2 Mode', _get_fan_mode_description(fanModes[1]), ''),
-                ('Fan 3 Mode', _get_fan_mode_description(fanModes[2]), ''),
-                ('Fan 4 Mode', _get_fan_mode_description(fanModes[3]), ''),
-                ('Fan 5 Mode', _get_fan_mode_description(fanModes[4]), ''),
-                ('Fan 6 Mode', _get_fan_mode_description(fanModes[5]), ''),
+                ("Fan 1 Mode", _get_fan_mode_description(fanModes[0]), ""),
+                ("Fan 2 Mode", _get_fan_mode_description(fanModes[1]), ""),
+                ("Fan 3 Mode", _get_fan_mode_description(fanModes[2]), ""),
+                ("Fan 4 Mode", _get_fan_mode_description(fanModes[3]), ""),
+                ("Fan 5 Mode", _get_fan_mode_description(fanModes[4]), ""),
+                ("Fan 6 Mode", _get_fan_mode_description(fanModes[5]), ""),
             ]
 
         return status
@@ -206,15 +227,17 @@ class CommanderPro(UsbHidDriver):
         Returns a list of `(property, value, unit)` tuples.
         """
 
-        if self.device.product_id != 0x0c10:
-            _LOGGER.debug('only the Commander Pro supports this')
+        if self.device.product_id != 0x0C10:
+            _LOGGER.debug("only the Commander Pro supports this")
             return []
 
-        connected_temp_sensors = self._data.load('temp_sensors_connected', default=[0]*self._temp_probs)
-        fan_modes = self._data.load('fan_modes', default=[0]*self._fan_count)
+        connected_temp_sensors = self._data.load(
+            "temp_sensors_connected", default=[0] * self._temp_probs
+        )
+        fan_modes = self._data.load("fan_modes", default=[0] * self._fan_count)
 
         # get the temperature sensor values
-        temp = [0]*self._temp_probs
+        temp = [0] * self._temp_probs
         for num, enabled in enumerate(connected_temp_sensors):
             if enabled:
                 temp[num] = self._get_temp(num)
@@ -230,22 +253,22 @@ class CommanderPro(UsbHidDriver):
         volt_3 = u16be_from(res, offset=1) / 1000
 
         # get fan RPMs of connected fans
-        fanspeeds = [0]*self._fan_count
+        fanspeeds = [0] * self._fan_count
         for fan_num, mode in enumerate(fan_modes):
             if mode == _FAN_MODE_DC or mode == _FAN_MODE_PWM:
                 fanspeeds[fan_num] = self._get_fan_rpm(fan_num)
 
         status = [
-            ('12 volt rail', volt_12, 'V'),
-            ('5 volt rail', volt_5, 'V'),
-            ('3.3 volt rail', volt_3, 'V'),
+            ("12 volt rail", volt_12, "V"),
+            ("5 volt rail", volt_5, "V"),
+            ("3.3 volt rail", volt_3, "V"),
         ]
 
         for temp_num in range(self._temp_probs):
-            status += [(f'Temp sensor {temp_num + 1}', temp[temp_num], '°C')]
+            status += [(f"Temp sensor {temp_num + 1}", temp[temp_num], "°C")]
 
         for fan_num in range(self._fan_count):
-            status += [(f'Fan {fan_num + 1} speed', fanspeeds[fan_num], 'rpm')]
+            status += [(f"Fan {fan_num + 1} speed", fanspeeds[fan_num], "rpm")]
 
         return status
 
@@ -256,10 +279,10 @@ class CommanderPro(UsbHidDriver):
         """
 
         if self._temp_probs == 0:
-            raise ValueError('this device does not have a temperature sensor')
+            raise ValueError("this device does not have a temperature sensor")
 
         if sensor_num < 0 or sensor_num > 3:
-            raise ValueError(f'sensor_num {sensor_num} invalid, must be between 0 and 3')
+            raise ValueError(f"sensor_num {sensor_num} invalid, must be between 0 and 3")
 
         res = self._send_command(_CMD_GET_TEMP, [sensor_num])
         temp = u16be_from(res, offset=1) / 100
@@ -273,10 +296,10 @@ class CommanderPro(UsbHidDriver):
         """
 
         if self._fan_count == 0:
-            raise ValueError('this device does not have any fans')
+            raise ValueError("this device does not have any fans")
 
         if fan_num < 0 or fan_num > 5:
-            raise ValueError(f'fan_num {fan_num} invalid, must be between 0 and 5')
+            raise ValueError(f"fan_num {fan_num} invalid, must be between 0 and 5")
 
         res = self._send_command(_CMD_GET_FAN_RPM, [fan_num])
         speed = u16be_from(res, offset=1)
@@ -287,23 +310,27 @@ class CommanderPro(UsbHidDriver):
         """This will get a list of all the fan channels that the command should be sent to
         It will look up the name of the fan channel given and return a list of the real fan number
         """
-        if channel == 'sync':
+        if channel == "sync":
             return list(range(len(self._fan_names)))
         elif channel in self._fan_names:
             return [self._fan_names.index(channel)]
         elif len(self._fan_names) > 1:
-            raise ValueError(f'unknown channel, should be one of: {_quoted("sync", *self._fan_names)}')
+            raise ValueError(
+                f'unknown channel, should be one of: {_quoted("sync", *self._fan_names)}'
+            )
 
     def _get_hw_led_channels(self, channel):
         """This will get a list of all the led channels that the command should be sent to
         It will look up the name of the led channel given and return a list of the real led device number
         """
-        if channel == 'sync':
+        if channel == "sync":
             return list(range(len(self._led_names)))
         elif channel in self._led_names:
             return [self._led_names.index(channel)]
         elif len(self._led_names) > 1:
-            raise ValueError(f'unknown channel, should be one of: {_quoted("sync", *self._led_names)}')
+            raise ValueError(
+                f'unknown channel, should be one of: {_quoted("sync", *self._led_names)}'
+            )
 
     def set_fixed_speed(self, channel, duty, **kwargs):
         """Set fan or fans to a fixed speed duty.
@@ -323,7 +350,7 @@ class CommanderPro(UsbHidDriver):
 
         duty = clamp(duty, 0, 100)
         fan_channels = self._get_hw_fan_channels(channel)
-        fan_modes = self._data.load('fan_modes', default=[0]*self._fan_count)
+        fan_modes = self._data.load("fan_modes", default=[0] * self._fan_count)
 
         for fan in fan_channels:
             mode = fan_modes[fan]
@@ -352,32 +379,36 @@ class CommanderPro(UsbHidDriver):
 
         profile = list(profile)
 
-        criticalTemp = _CRITICAL_TEMPERATURE_HIGH if check_unsafe('high_temperature', **kwargs) else _CRITICAL_TEMPERATURE
+        criticalTemp = (
+            _CRITICAL_TEMPERATURE_HIGH
+            if check_unsafe("high_temperature", **kwargs)
+            else _CRITICAL_TEMPERATURE
+        )
         profile = _prepare_profile(profile, criticalTemp)
 
         # fan_type = kwargs['fan_type'] # need to make sure this is set
         temp_sensor = clamp(temperature_sensor, 1, self._temp_probs)
 
-        sensors = self._data.load('temp_sensors_connected', default=[0]*self._temp_probs)
+        sensors = self._data.load("temp_sensors_connected", default=[0] * self._temp_probs)
 
-        if sensors[temp_sensor-1] != 1:
-            raise ValueError('the specified temperature sensor is not connected')
+        if sensors[temp_sensor - 1] != 1:
+            raise ValueError("the specified temperature sensor is not connected")
 
         buf = bytearray(26)
-        buf[1] = temp_sensor-1  # 0  # use temp sensor 1
+        buf[1] = temp_sensor - 1  # 0  # use temp sensor 1
 
         for i, entry in enumerate(profile):
-            temp = entry[0]*100
+            temp = entry[0] * 100
             rpm = entry[1]
 
             # convert both values to 2 byte big endian values
-            buf[2 + i*2] = temp.to_bytes(2, byteorder='big')[0]
-            buf[3 + i*2] = temp.to_bytes(2, byteorder='big')[1]
-            buf[14 + i*2] = rpm.to_bytes(2, byteorder='big')[0]
-            buf[15 + i*2] = rpm.to_bytes(2, byteorder='big')[1]
+            buf[2 + i * 2] = temp.to_bytes(2, byteorder="big")[0]
+            buf[3 + i * 2] = temp.to_bytes(2, byteorder="big")[1]
+            buf[14 + i * 2] = rpm.to_bytes(2, byteorder="big")[0]
+            buf[15 + i * 2] = rpm.to_bytes(2, byteorder="big")[1]
 
         fan_channels = self._get_hw_fan_channels(channel)
-        fan_modes = self._data.load('fan_modes', default=[0]*self._fan_count)
+        fan_modes = self._data.load("fan_modes", default=[0] * self._fan_count)
 
         for fan in fan_channels:
             mode = fan_modes[fan]
@@ -385,8 +416,17 @@ class CommanderPro(UsbHidDriver):
                 buf[0] = fan
                 self._send_command(_CMD_SET_FAN_PROFILE, buf)
 
-    def set_color(self, channel, mode, colors, direction='forward',
-                  speed='medium', start_led=1, maximum_leds=1, **kwargs):
+    def set_color(
+        self,
+        channel,
+        mode,
+        colors,
+        direction="forward",
+        speed="medium",
+        start_led=1,
+        maximum_leds=1,
+        **kwargs,
+    ):
         """Set the color of each LED.
 
         The table bellow summarizes the available channels, modes, and their
@@ -409,8 +449,8 @@ class CommanderPro(UsbHidDriver):
 
         # a special mode to clear the current led settings.
         # this is usefull if the the user wants to use a led mode for multiple devices
-        if mode == 'clear':
-            self._data.store('saved_effects', None)
+        if mode == "clear":
+            self._data.store("saved_effects", None)
             return
 
         colors = list(colors)
@@ -419,37 +459,45 @@ class CommanderPro(UsbHidDriver):
         colors = list(c)
 
         direction = map_direction(direction, _LED_DIRECTION_FORWARD, _LED_DIRECTION_BACKWARD)
-        speed = _LED_SPEED_SLOW if speed == 'slow' else _LED_SPEED_FAST if speed == 'fast' else _LED_SPEED_MEDIUM
+        speed = (
+            _LED_SPEED_SLOW
+            if speed == "slow"
+            else _LED_SPEED_FAST
+            if speed == "fast"
+            else _LED_SPEED_MEDIUM
+        )
         start_led = clamp(start_led, 1, 204) - 1
         num_leds = clamp(maximum_leds, 1, 204 - start_led - 1)
-        random_colors = 0x00 if mode == 'off' or len(colors) != 0 else 0x01
+        random_colors = 0x00 if mode == "off" or len(colors) != 0 else 0x01
         mode_val = _MODES.get(mode, -1)
 
         if mode_val == -1:
             raise ValueError(f'mode "{mode}" is not valid')
 
         # FIXME clears on 'off', while the docs only mention this behavior for 'clear'
-        saved_effects = [] if mode == 'off' else self._data.load('saved_effects', default=[])
+        saved_effects = [] if mode == "off" else self._data.load("saved_effects", default=[])
 
         for led_channel in self._get_hw_led_channels(channel):
 
             lighting_effect = {
-                    'channel': led_channel,
-                    'start_led': start_led,
-                    'num_leds': num_leds,
-                    'mode': mode_val,
-                    'speed': speed,
-                    'direction': direction,
-                    'random_colors': random_colors,
-                    'colors': colors
-                }
+                "channel": led_channel,
+                "start_led": start_led,
+                "num_leds": num_leds,
+                "mode": mode_val,
+                "speed": speed,
+                "direction": direction,
+                "random_colors": random_colors,
+                "colors": colors,
+            }
 
             saved_effects += [lighting_effect]
 
             # check to make sure that too many LED effects are not being sent.
             # the max seems to be 8 as found here https://github.com/liquidctl/liquidctl/issues/154#issuecomment-762372583
             if len(saved_effects) > 8:
-                _LOGGER.warning(f'too many lighting effects. Run `liquidctl set {channel} color clear` to reset the effect')
+                _LOGGER.warning(
+                    f"too many lighting effects. Run `liquidctl set {channel} color clear` to reset the effect"
+                )
                 return
 
             # start sending the led commands
@@ -458,21 +506,22 @@ class CommanderPro(UsbHidDriver):
             self._send_command(_CMD_SET_LED_CHANNEL_STATE, [led_channel, 0x01])
 
         # FIXME clears on 'off', while the docs only mention this behavior for 'clear'
-        self._data.store('saved_effects', None if mode == 'off' else saved_effects)
+        self._data.store("saved_effects", None if mode == "off" else saved_effects)
 
         for effect in saved_effects:
-            config = [effect.get('channel'),
-                      effect.get('start_led'),
-                      effect.get('num_leds'),
-                      effect.get('mode'),
-                      effect.get('speed'),
-                      effect.get('direction'),
-                      effect.get('random_colors'),
-                      0xff
-                      ] + effect.get('colors')
+            config = [
+                effect.get("channel"),
+                effect.get("start_led"),
+                effect.get("num_leds"),
+                effect.get("mode"),
+                effect.get("speed"),
+                effect.get("direction"),
+                effect.get("random_colors"),
+                0xFF,
+            ] + effect.get("colors")
             self._send_command(_CMD_LED_EFFECT, config)
 
-        self._send_command(_CMD_LED_COMMIT, [0xff])
+        self._send_command(_CMD_LED_COMMIT, [0xFF])
 
     def _send_command(self, command, data=None):
         # self.device.write expects buf[0] to be the report number or 0 if not used
@@ -481,8 +530,8 @@ class CommanderPro(UsbHidDriver):
         start_at = 2
 
         if data:
-            data = data[:_REPORT_LENGTH-1]
-            buf[start_at: start_at + len(data)] = data
+            data = data[: _REPORT_LENGTH - 1]
+            buf[start_at : start_at + len(data)] = data
 
         self.device.clear_enqueued_reports()
         self.device.write(buf)

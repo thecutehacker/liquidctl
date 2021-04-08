@@ -51,48 +51,48 @@ from liquidctl.driver import *
 
 LOGGER = logging.getLogger(__name__)
 
-if __name__ == '__main__':
-    args = docopt(__doc__, version='0.0.2')
+if __name__ == "__main__":
+    args = docopt(__doc__, version="0.0.2")
     frwd = _borrow._make_opts(args)
     devs = list(find_liquidctl_devices(**frwd))
-    update_interval = float(args['--interval'])
+    update_interval = float(args["--interval"])
 
-    if args['--debug']:
-        args['--verbose'] = True
-        logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(name)s: %(message)s')
-    elif args['--verbose']:
-        logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    if args["--debug"]:
+        args["--verbose"] = True
+        logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(name)s: %(message)s")
+    elif args["--verbose"]:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     else:
-        logging.basicConfig(level=logging.WARNING, format='%(message)s')
+        logging.basicConfig(level=logging.WARNING, format="%(message)s")
         sys.tracebacklimit = 0
 
     hwinfo_sensor_types = {
-        '°C': 'Temp',
-        'V': 'Volt',
-        'rpm': 'Fan',
-        'A': 'Current',
-        'W': 'Power',
-        'dB': 'Other'
+        "°C": "Temp",
+        "V": "Volt",
+        "rpm": "Fan",
+        "A": "Current",
+        "W": "Power",
+        "dB": "Other",
     }
-    hwinfo_custom = winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\HWiNFO64\Sensors\Custom')
+    hwinfo_custom = winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\HWiNFO64\Sensors\Custom")
     infos = []
 
     try:
         for i, d in enumerate(devs):
-            LOGGER.info('Initializing %s', d.description)
+            LOGGER.info("Initializing %s", d.description)
             d.connect()
 
-            dev_key = winreg.CreateKey(hwinfo_custom, f'{d.description} (liquidctl#{i})')
+            dev_key = winreg.CreateKey(hwinfo_custom, f"{d.description} (liquidctl#{i})")
             dev_values = []
             for j, (k, v, u) in enumerate(d.get_status()):
                 hwinfo_type = hwinfo_sensor_types.get(u, None)
                 if not hwinfo_type:
                     dev_values.append(None)
                 else:
-                    sensor_key = winreg.CreateKey(dev_key, f'{hwinfo_type}{j}')
-                    winreg.SetValueEx(sensor_key, 'Name', None, winreg.REG_SZ, k)
-                    winreg.SetValueEx(sensor_key, 'Unit', None, winreg.REG_SZ, u)
-                    winreg.SetValueEx(sensor_key, 'Value', None, winreg.REG_SZ, str(v))
+                    sensor_key = winreg.CreateKey(dev_key, f"{hwinfo_type}{j}")
+                    winreg.SetValueEx(sensor_key, "Name", None, winreg.REG_SZ, k)
+                    winreg.SetValueEx(sensor_key, "Unit", None, winreg.REG_SZ, u)
+                    winreg.SetValueEx(sensor_key, "Value", None, winreg.REG_SZ, str(v))
                     dev_values.append(sensor_key)
 
             infos.append((dev_key, dev_values))
@@ -105,28 +105,28 @@ if __name__ == '__main__':
                     for j, (k, v, u) in enumerate(d.get_status()):
                         sensor_key = dev_values[j]
                         if sensor_key:
-                            winreg.SetValueEx(sensor_key, 'Value', None, winreg.REG_SZ, str(v))
+                            winreg.SetValueEx(sensor_key, "Value", None, winreg.REG_SZ, str(v))
                 except usb.core.USBError as err:
-                    LOGGER.warning('Failed to read from the device, possibly serving stale data')
+                    LOGGER.warning("Failed to read from the device, possibly serving stale data")
                     LOGGER.debug(err, exc_info=True)
             time.sleep(update_interval)
     except KeyboardInterrupt:
-        LOGGER.info('Canceled by user')
+        LOGGER.info("Canceled by user")
     except:
-        LOGGER.exception('Unexpected error')
+        LOGGER.exception("Unexpected error")
         sys.exit(1)
     finally:
         for d in devs:
             try:
-                LOGGER.info('Disconnecting from %s', d.description)
+                LOGGER.info("Disconnecting from %s", d.description)
                 d.disconnect()
             except:
-                LOGGER.exception('Unexpected error when disconnecting')
+                LOGGER.exception("Unexpected error when disconnecting")
         for dev_key, dev_values in infos:
             try:
                 for sensor_key in dev_values:
                     if sensor_key:
-                        winreg.DeleteKey(sensor_key, '')
-                winreg.DeleteKey(dev_key, '')
+                        winreg.DeleteKey(sensor_key, "")
+                winreg.DeleteKey(dev_key, "")
             except:
-                LOGGER.exception('Unexpected error when cleaning the registry')
+                LOGGER.exception("Unexpected error when cleaning the registry")
