@@ -24,7 +24,7 @@ if sys.platform == 'linux':
     # implementation is used here; this is done through the SMBus attribute
     # created below, do not move/replace/change it, nor access it during module
     # initialization
-    from smbus import SMBus
+    from smbus2 import SMBus
 
     LinuxEeprom = namedtuple('LinuxEeprom', 'name data')
 

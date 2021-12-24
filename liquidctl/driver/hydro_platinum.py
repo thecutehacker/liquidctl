@@ -5,7 +5,6 @@ Supported devices:
 - Corsair Hydro H100i Platinum
 - Corsair Hydro H100i Platinum SE
 - Corsair Hydro H115i Platinum
-- Corsair Hydro H60i Pro XT
 - Corsair Hydro H100i Pro XT
 - Corsair Hydro H115i Pro XT
 - Corsair Hydro H150i Pro XT
@@ -118,8 +117,6 @@ class HydroPlatinum(UsbHidDriver):
             {'fan_count': 2, 'fan_leds': 16}),
         (0x1b1c, 0x0c17, None, 'Corsair Hydro H115i Platinum (experimental)',
             {'fan_count': 2, 'fan_leds': 4}),
-        (0x1b1c, 0x0c29, None, 'Corsair Hydro H60i Pro XT (experimental)',
-            {'fan_count': 2, 'fan_leds': 0}),
         (0x1b1c, 0x0c20, None, 'Corsair Hydro H100i Pro XT (experimental)',
             {'fan_count': 2, 'fan_leds': 0}),
         (0x1b1c, 0x0c21, None, 'Corsair Hydro H115i Pro XT (experimental)',
@@ -137,7 +134,7 @@ class HydroPlatinum(UsbHidDriver):
         # presence of "Hydro", for backward compatibility with 1.5.0 and
         # previous versions
 
-        for vid, pid, _, desc, devargs in cls.SUPPORTED_DEVICES:
+        for vid, pid, _, description, devargs in cls.SUPPORTED_DEVICES:
             if (vendor and vendor != vid) or handle.vendor_id != vid:
                 continue
             if (product and product != pid) or handle.product_id != pid:
@@ -148,13 +145,13 @@ class HydroPlatinum(UsbHidDriver):
                 continue
             if match:
                 match = match.lower()
-                descr = desc.lower()
+                descr = description.lower()
                 if not (match in descr or match in descr.replace('hydro ', '')):
                     continue
             consargs = devargs.copy()
             consargs.update(kwargs)
-            dev = cls(handle, desc, **consargs)
-            _LOGGER.debug('instantiated %s driver for %s', cls.__name__, desc)
+            dev = cls(handle, description, **consargs)
+            _LOGGER.debug('instanced driver for %s', description)
             yield dev
 
     def __init__(self, device, description, fan_count, fan_leds, **kwargs):

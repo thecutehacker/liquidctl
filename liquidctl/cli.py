@@ -70,7 +70,6 @@ import inspect
 import json
 import logging
 import os
-import platform
 import sys
 from numbers import Number
 from traceback import format_exception
@@ -322,7 +321,7 @@ def main():
 
     if args['--debug']:
         args['--verbose'] = True
-        log_fmt = '%(log_color)s[%(levelname)s] (%(module)s) (%(funcName)s): %(message)s'
+        log_fmt = '%(log_color)s[%(levelname)s] %(module)s (%(funcName)s): %(message)s'
         log_level = logging.DEBUG
     elif args['--verbose']:
         log_fmt = '%(log_color)s%(levelname)s: %(message)s'
@@ -356,8 +355,7 @@ def main():
     log_handler.setFormatter(log_fmtter)
     logging.basicConfig(level=log_level, handlers=[log_handler])
 
-    _LOGGER.debug('version: %s', _gen_version())
-    _LOGGER.debug('platform: %s', platform.platform())
+    _LOGGER.debug('running %s', _gen_version())
 
     # unlike humans, machines want to know everything; imply verbose everywhere
     # other than when setting default logging level and format (which are
